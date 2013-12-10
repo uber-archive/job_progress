@@ -11,7 +11,7 @@ Latest documentation: not yet generated.
 Getting started
 ---------------
 
-.. doctest::
+.. code-block:: python
 
     >>> from job_progress.job_progress import JobProgress
     >>> from job_progress.backends.redis import RedisBackend

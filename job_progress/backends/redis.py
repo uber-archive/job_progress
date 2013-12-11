@@ -126,7 +126,7 @@ class RedisBackend(object):
             keys = []
 
             if "is_ready" in filters:
-                is_ready = filters["is_ready"]
+                is_ready = filters.pop("is_ready")
 
                 if is_ready is False:
                     searched_states = states.NOT_READY_STATES
@@ -141,8 +141,12 @@ class RedisBackend(object):
                     for state in searched_states))
 
             if "state" in filters:
+                state = filters.pop("state")
                 keys.extend(self.client.smembers(
-                    self._get_key_for_index("state", filters["state"])))
+                    self._get_key_for_index("state", state)))
+
+            if filters:
+                raise TypeError("Unknown filters: %s" % filters)
 
         else:
             # Just get all keys

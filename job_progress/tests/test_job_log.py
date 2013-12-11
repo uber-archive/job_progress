@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import mock
+import pytest
 import redis
 
 from job_progress.job_progress import JobProgress
@@ -12,7 +13,8 @@ SETTINGS = {
     "url": "redis://localhost:6379/0",
 }
 JobProgress.backend = RedisBackend(SETTINGS)
-JobProgress.session = session.Session()
+job_session = session.Session()
+JobProgress.session = job_session
 
 
 def teardown_function(function):
@@ -126,3 +128,10 @@ def test_indexes():
     # There's no non ready jobs
     jobs = JobProgress.query(is_ready=False)
     assert len(jobs) == 0
+
+
+def test_invalid_filter():
+    """Verify that we raise a TypeError on invalid filter."""
+
+    with pytest.raises(TypeError):
+        job_session.query(toaster=True)

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import weakref
 
-from job_progress.job_progress import JobProgress  # circular import
+from job_progress.job_progress import JobProgress
 
 
 class Session(object):
@@ -40,3 +40,19 @@ class Session(object):
 
     def _new_cache_storage(self):
         return weakref.WeakValueDictionary()
+
+    def query(self, **filters):
+        """Query the backend.
+
+        :param filters: filters.
+
+        Currently supported filters are:
+
+        - ``is_ready``
+        - ``state``
+
+        This method should be considered alpha.
+        """
+
+        ids = JobProgress.backend.get_ids(**filters)
+        return [self.get(id_) for id_ in ids]

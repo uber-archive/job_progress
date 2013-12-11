@@ -12,17 +12,23 @@ class RedisBackend(object):
 
     """
 
-    :param dict settings:
+    :param dict settings: settings dictionnary
+    :param function get_client: function that should return a Redis
+        client instance.
 
     """
 
-    def __init__(self, settings):
+    def __init__(self, settings=None, get_client=None):
         self.settings = settings
+        self.get_client = get_client
 
     @cached_property
     def client(self):
         """Return Redis client."""
-        return redis.StrictRedis.from_url(self.settings["url"])
+        if self.get_client:
+            return self.get_client()
+        else:
+            return redis.StrictRedis.from_url(self.settings["url"])
 
     def initialize_job(self, id_,
                        data, state, amount):

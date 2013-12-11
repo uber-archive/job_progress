@@ -15,19 +15,15 @@ class JobProgress(object):
     session = None
 
     def __init__(self, data, amount, id_=None, state=None,
-                 previous_state=None):
+                 previous_state=None, loading=False):
         self.data = data
         self.amount = amount
         state = state or states.PENDING
         self._previous_state = previous_state or states.PENDING
+        self.id = id_ or _generate_id()
 
-        if id_:
-            # Loading from db
-            self.id = id_
-
-        else:
+        if not loading:
             # Store in the back-end
-            self.id = _generate_id()
             self.backend.initialize_job(self.id, self.data, state,
                                         self.amount)
             self.session.add(self.id, self)
@@ -36,7 +32,7 @@ class JobProgress(object):
     def from_backend(cls, data, amount, id_, state, previous_state):
         """Load from backend."""
 
-        self = cls(data, amount, id_, state, previous_state)
+        self = cls(data, amount, id_, state, previous_state, loading=True)
         return self
 
     @property

@@ -38,7 +38,7 @@ def test_flow():
         'data': {'toaster': 'bidule'},
         'id': mock.ANY,
         'is_ready': False,
-        'progress': {},
+        'progress': {'PENDING': 10},
         'state': 'PENDING',
     }
     assert job.state == states.PENDING
@@ -53,7 +53,7 @@ def test_flow():
         'data': {'toaster': 'bidule'},
         'id': mock.ANY,
         'is_ready': False,
-        'progress': {'SUCCESS': '10'},
+        'progress': {'SUCCESS': 10},
         'state': 'PENDING',
     }
     assert job.state == states.PENDING
@@ -67,7 +67,7 @@ def test_flow():
         'data': {'toaster': 'bidule'},
         'id': mock.ANY,
         'is_ready': True,
-        'progress': {'SUCCESS': '10'},
+        'progress': {'SUCCESS': 10},
         'state': 'SUCCESS',
     }
     assert job.state == states.SUCCESS

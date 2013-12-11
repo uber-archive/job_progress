@@ -78,9 +78,17 @@ class JobProgress(object):
             {
             "success": 12,
             "failure": 14,
+            "pending": 32,
             }
         """
-        return self.backend.get_progress(self.id)
+        progress = self.backend.get_progress(self.id)
+        progress = {k: int(v) for k, v in progress.items()}
+
+        pending = int(self.amount) - sum(progress.values())
+        if pending:
+            progress[states.PENDING] = pending
+
+        return progress
 
     def to_dict(self):
         """Return dict representation of the object."""

@@ -24,12 +24,12 @@ Getting started
     >>> job.add_one_success()
     >>> job.add_one_failure()
     >>> job.get_progress()
-    {'FAILURE': '1', 'SUCCESS': '1'}
+    {'FAILURE': 1, 'PENDING': 8, 'SUCCESS': 1}
     >>> del job
     >>> # Jobs are indexed
     >>> jobs = JobProgress.query(state=states.STARTED)
     >>> jobs[0].get_progress()
-    {'FAILURE': '1', 'SUCCESS': '1'}
+    {'FAILURE': 1, 'PENDING': 8, 'SUCCESS': 1}
 
 Installation
 ------------

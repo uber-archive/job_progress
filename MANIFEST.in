@@ -1,0 +1,6 @@
+recursive-include job_progress *
+recursive-include docs *
+
+include LICENSE.txt
+include README.rst
+include requirements.txt

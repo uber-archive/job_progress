@@ -80,14 +80,24 @@ class RedisBackend(object):
     def set_state(self, id_, state, previous_state=None):
         """Set state of a given id."""
         key = self._get_key_for_job_id(id_)
+
+        # First set the state
         state_key = self._get_metadata_key(key, "state")
+        self.client.set(state_key, state)
+
+        self.update_state_index(key, previous_state, state)
+
+    def update_state_index(self, key, previous_state, new_state):
+        """Update the state index."""
+
+        previous_state_key = self._get_key_for_index("state", previous_state)
+        new_state_key = self._get_key_for_index("state", new_state)
 
         if previous_state:
-            self.client.srem(self._get_key_for_index("state", previous_state),
-                             key)
-
-        self.client.sadd(self._get_key_for_index("state", state), key)
-        self.client.set(state_key, state)
+            # This is an atomic operation.
+            self.client.smove(previous_state_key, new_state_key, key)
+        else:
+            self.client.sadd(new_state_key, key)
 
     @classmethod
     def _get_key_for_job_id(cls, id_):

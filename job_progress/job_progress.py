@@ -84,7 +84,11 @@ class JobProgress(object):
         progress = self.backend.get_progress(self.id)
         progress = {k: int(v) for k, v in progress.items()}
 
-        pending = int(self.amount) - sum(progress.values())
+        pending = 0
+        if self.amount:
+            # There can be a race condition before we have saved amount.
+            pending = int(self.amount) - sum(progress.values())
+
         if pending:
             progress[states.PENDING] = pending
 

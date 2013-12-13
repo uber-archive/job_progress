@@ -28,6 +28,9 @@ class JobProgress(object):
                                         self.amount)
             self.session.add(self.id, self)
 
+    def __repr__(self):
+        return "<JobProgress '%s'>" % self.id
+
     @classmethod
     def from_backend(cls, data, amount, id_, state, previous_state):
         """Load from backend."""
@@ -55,6 +58,11 @@ class JobProgress(object):
         """Set the state."""
         self.backend.set_state(self.id, state, self._previous_state)
         self._previous_state = state
+
+    @property
+    def is_staled(self):
+        """Return True if staled."""
+        return self.state == states.STARTED and self.backend.is_staled(self.id)
 
     def add_one_progress_state(self, state):
         """Add one unit status."""
@@ -105,6 +113,10 @@ class JobProgress(object):
             "state": self.state,
         }
         return returned
+
+    def delete(self):
+        """Delete the job."""
+        self.backend.delete_job(self.id, self.state)
 
     @classmethod
     def query(cls, **filters):

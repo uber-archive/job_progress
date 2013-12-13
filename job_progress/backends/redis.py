@@ -6,6 +6,9 @@ from job_progress.cached_property import cached_property
 
 JOB_LOG_PREFIX = "jobprogress"
 INDEX_SUFFIX = "index"
+DEFAULT_SETTINGS = {
+    "heartbeat_expiration": 3600,  # in seconds
+}
 
 
 class RedisBackend(object):
@@ -19,8 +22,18 @@ class RedisBackend(object):
     """
 
     def __init__(self, settings=None, get_client=None):
-        self.settings = settings
+        self.settings = DEFAULT_SETTINGS.copy()
+        if settings:
+            self.settings.update(settings)
+
         self.get_client = get_client
+
+    def update_settings(self, settings):
+        """Update the settings.
+
+        :param dict settings:
+        """
+        self.settings.update(settings)
 
     @cached_property
     def client(self):
@@ -36,11 +49,25 @@ class RedisBackend(object):
         key = self._get_key_for_job_id(id_)
         pipeline = self.client.pipeline()
 
-        pipeline.hmset(self._get_metadata_key(key, "data"), data)
+        if data:
+            pipeline.hmset(self._get_metadata_key(key, "data"), data)
         pipeline.set(self._get_metadata_key(key, "amount"), amount)
         pipeline.set(self._get_metadata_key(key, "state"), state)
         pipeline.sadd(self._get_key_for_index("all"), key)
         pipeline.sadd(self._get_key_for_index("state", state), key)
+        pipeline.execute()
+
+    def delete_job(self, id_, state):
+        """Delete a job based on id."""
+        key = self._get_key_for_job_id(id_)
+        pipeline = self.client.pipeline()
+
+        pipeline.delete(self._get_metadata_key(key, "data"))
+        pipeline.delete(self._get_metadata_key(key, "amount"))
+        pipeline.delete(self._get_metadata_key(key, "state"))
+        pipeline.delete(self._get_metadata_key(key, "heartbeat"))
+        pipeline.srem(self._get_key_for_index("all"), key)
+        pipeline.srem(self._get_key_for_index("state", state), key)
         pipeline.execute()
 
     def get_data(self, id_):
@@ -62,8 +89,15 @@ class RedisBackend(object):
     def add_one_progress_state(self, id_, state):
         """Add one unit state."""
         key = self._get_key_for_job_id(id_)
-        states_key = self._get_metadata_key(key, "progress")
-        self.client.hincrby(states_key, state, 1)
+        self.client.hincrby(self._get_metadata_key(key, "progress"),
+                            state, 1)
+        self.update_hearbeat(key)
+
+    def update_hearbeat(self, key):
+        """Update the task's heartbeat."""
+        self.client.setex(self._get_metadata_key(key, "heartbeat"),
+                          self.settings["heartbeat_expiration"],
+                          1)
 
     def get_progress(self, id_):
         """Return progress."""
@@ -81,10 +115,16 @@ class RedisBackend(object):
         """Set state of a given id."""
         key = self._get_key_for_job_id(id_)
 
+        # The first thing we do is update the heartbeat to prevent any
+        # race condition
+        if state == states.STARTED:
+            self.update_hearbeat(key)
+
         # First set the state
         state_key = self._get_metadata_key(key, "state")
         self.client.set(state_key, state)
 
+        # The very last thing is updating the index
         self.update_state_index(key, previous_state, state)
 
     def update_state_index(self, key, previous_state, new_state):
@@ -98,6 +138,11 @@ class RedisBackend(object):
             self.client.smove(previous_state_key, new_state_key, key)
         else:
             self.client.sadd(new_state_key, key)
+
+    def is_staled(self, id_):
+        """Return True if job at id_ is staled."""
+        key = self._get_key_for_job_id(id_)
+        return not bool(self.client.exists(key))
 
     @classmethod
     def _get_key_for_job_id(cls, id_):

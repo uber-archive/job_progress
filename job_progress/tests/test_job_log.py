@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import time
 
 import mock
 import pytest
@@ -6,6 +7,7 @@ import redis
 
 from job_progress.job_progress import JobProgress
 from job_progress.backends.redis import RedisBackend
+from job_progress import utils
 from job_progress import states
 from job_progress import session
 
@@ -135,3 +137,51 @@ def test_invalid_filter():
 
     with pytest.raises(TypeError):
         job_session.query(toaster=True)
+
+
+def test_staled_job():
+    """Verify that we can check if a job is staled."""
+    job = JobProgress({}, amount=1)
+
+    assert job.is_staled is False
+
+    JobProgress.backend.update_settings({"heartbeat_expiration": 1})
+    job.state = states.STARTED
+    assert job.is_staled is True
+    utils.fail_staled_jobs(JobProgress.session)
+    assert job.state == states.FAILURE
+
+    jobs = JobProgress.query(state=states.STARTED)
+    assert jobs == []
+
+    jobs = JobProgress.query(state=states.FAILURE)
+    assert jobs == [job]
+
+
+def test_cleanup_ready_job():
+    """Verify that the cleanup job works."""
+    job = JobProgress({"a": 1}, amount=1)
+
+    utils.cleanup_ready_jobs(JobProgress.session)
+
+    jobs = JobProgress.query()
+    assert jobs == [job]
+
+    job.state = states.FAILURE
+
+    utils.cleanup_ready_jobs(JobProgress.session)
+
+    jobs = JobProgress.query()
+    assert jobs == []
+
+
+def test_delete():
+    """Verify that we can delete a job."""
+    job = JobProgress({"a": 1}, amount=1)
+    # To trigger indexing
+    job.state = states.STARTED
+    redis_client = redis.StrictRedis.from_url(SETTINGS["url"])
+
+    job.delete()
+
+    assert len(redis_client.keys("*")) == 0

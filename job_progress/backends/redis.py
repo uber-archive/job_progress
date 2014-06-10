@@ -8,6 +8,7 @@ JOB_LOG_PREFIX = "jobprogress"
 INDEX_SUFFIX = "index"
 DEFAULT_SETTINGS = {
     "heartbeat_expiration": 3600,  # in seconds
+    "use_pipeline": True,
 }
 
 
@@ -47,28 +48,34 @@ class RedisBackend(object):
                        data, state, amount):
         """Initialize and store a job."""
         key = self._get_key_for_job_id(id_)
-        pipeline = self.client.pipeline()
+
+        use_pipeline = self.settings.get('use_pipeline')
+        client = self.client.pipeline() if  use_pipeline else self.client
 
         if data:
-            pipeline.hmset(self._get_metadata_key(key, "data"), data)
-        pipeline.set(self._get_metadata_key(key, "amount"), amount)
-        pipeline.set(self._get_metadata_key(key, "state"), state)
-        pipeline.sadd(self._get_key_for_index("all"), key)
-        pipeline.sadd(self._get_key_for_index("state", state), key)
-        pipeline.execute()
+            client.hmset(self._get_metadata_key(key, "data"), data)
+        client.set(self._get_metadata_key(key, "amount"), amount)
+        client.set(self._get_metadata_key(key, "state"), state)
+        client.sadd(self._get_key_for_index("all"), key)
+        client.sadd(self._get_key_for_index("state", state), key)
+        if use_pipeline:
+            client.execute()
 
     def delete_job(self, id_, state):
         """Delete a job based on id."""
         key = self._get_key_for_job_id(id_)
-        pipeline = self.client.pipeline()
 
-        pipeline.delete(self._get_metadata_key(key, "data"))
-        pipeline.delete(self._get_metadata_key(key, "amount"))
-        pipeline.delete(self._get_metadata_key(key, "state"))
-        pipeline.delete(self._get_metadata_key(key, "heartbeat"))
-        pipeline.srem(self._get_key_for_index("all"), key)
-        pipeline.srem(self._get_key_for_index("state", state), key)
-        pipeline.execute()
+        use_pipeline = self.settings.get('use_pipeline')
+        client = self.client.pipeline() if  use_pipeline else self.client
+
+        client.delete(self._get_metadata_key(key, "data"))
+        client.delete(self._get_metadata_key(key, "amount"))
+        client.delete(self._get_metadata_key(key, "state"))
+        client.delete(self._get_metadata_key(key, "heartbeat"))
+        client.srem(self._get_key_for_index("all"), key)
+        client.srem(self._get_key_for_index("state", state), key)
+        if use_pipeline:
+            client.execute()
 
     def get_data(self, id_):
         """Return data for a given job."""

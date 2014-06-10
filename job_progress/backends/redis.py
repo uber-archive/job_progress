@@ -50,7 +50,7 @@ class RedisBackend(object):
         key = self._get_key_for_job_id(id_)
 
         use_pipeline = self.settings.get('use_pipeline')
-        client = self.client.pipeline() if  use_pipeline else self.client
+        client = self.client.pipeline() if use_pipeline else self.client
 
         if data:
             client.hmset(self._get_metadata_key(key, "data"), data)
@@ -66,7 +66,7 @@ class RedisBackend(object):
         key = self._get_key_for_job_id(id_)
 
         use_pipeline = self.settings.get('use_pipeline')
-        client = self.client.pipeline() if  use_pipeline else self.client
+        client = self.client.pipeline() if use_pipeline else self.client
 
         client.delete(self._get_metadata_key(key, "data"))
         client.delete(self._get_metadata_key(key, "amount"))

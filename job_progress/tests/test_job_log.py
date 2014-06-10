@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-import time
 
 import mock
 import pytest
@@ -7,21 +6,19 @@ import redis
 
 from job_progress.job_progress import JobProgress
 from job_progress.backends.redis import RedisBackend
+from job_progress.tests import TEST_SETTINGS
 from job_progress import utils
 from job_progress import states
 from job_progress import session
 
-SETTINGS = {
-    "url": "redis://localhost:6379/0",
-}
-JobProgress.backend = RedisBackend(SETTINGS)
+JobProgress.backend = RedisBackend(TEST_SETTINGS)
 job_session = session.Session()
 JobProgress.session = job_session
 
 
 def teardown_function(function):
     # Flush the db.
-    _flush_db(SETTINGS["url"])
+    _flush_db(TEST_SETTINGS["url"])
 
 
 def _flush_db(url):
@@ -180,7 +177,7 @@ def test_delete():
     job = JobProgress({"a": 1}, amount=1)
     # To trigger indexing
     job.state = states.STARTED
-    redis_client = redis.StrictRedis.from_url(SETTINGS["url"])
+    redis_client = redis.StrictRedis.from_url(TEST_SETTINGS["url"])
 
     job.delete()
 

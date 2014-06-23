@@ -198,9 +198,14 @@ class RedisBackend(object):
                     raise TypeError("Unknown is_ready type: '%r'" % is_ready)
 
                 # We need to get all the ids
-                keys.extend(self.client.sunion(
-                    self._get_key_for_index("state", state)
-                    for state in searched_states))
+                ids = set()
+
+                for state in searched_states:
+                    ids.update(self.client.smembers(
+                        self._get_key_for_index("state", state)
+                    ))
+
+                keys.extend(ids)
 
             if "state" in filters:
                 state = filters.pop("state")

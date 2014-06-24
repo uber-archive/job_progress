@@ -8,7 +8,7 @@ JOB_LOG_PREFIX = "jobprogress"
 INDEX_SUFFIX = "index"
 DEFAULT_SETTINGS = {
     "heartbeat_expiration": 3600,  # in seconds
-    "use_pipeline": True,
+    "using_twemproxy": True,
 }
 
 
@@ -49,8 +49,8 @@ class RedisBackend(object):
         """Initialize and store a job."""
         key = self._get_key_for_job_id(id_)
 
-        use_pipeline = self.settings.get('use_pipeline')
-        client = self.client.pipeline() if use_pipeline else self.client
+        using_twemproxy = self.settings.get('using_twemproxy')
+        client = self.client.pipeline() if not using_twemproxy else self.client
 
         if data:
             client.hmset(self._get_metadata_key(key, "data"), data)
@@ -58,15 +58,15 @@ class RedisBackend(object):
         client.set(self._get_metadata_key(key, "state"), state)
         client.sadd(self._get_key_for_index("all"), key)
         client.sadd(self._get_key_for_index("state", state), key)
-        if use_pipeline:
+        if using_twemproxy:
             client.execute()
 
     def delete_job(self, id_, state):
         """Delete a job based on id."""
         key = self._get_key_for_job_id(id_)
 
-        use_pipeline = self.settings.get('use_pipeline')
-        client = self.client.pipeline() if use_pipeline else self.client
+        using_twemproxy = self.settings.get('using_twemproxy')
+        client = self.client.pipeline() if not using_twemproxy else self.client
 
         client.delete(self._get_metadata_key(key, "data"))
         client.delete(self._get_metadata_key(key, "amount"))
@@ -74,7 +74,7 @@ class RedisBackend(object):
         client.delete(self._get_metadata_key(key, "heartbeat"))
         client.srem(self._get_key_for_index("all"), key)
         client.srem(self._get_key_for_index("state", state), key)
-        if use_pipeline:
+        if using_twemproxy:
             client.execute()
 
     def get_data(self, id_):
@@ -198,9 +198,21 @@ class RedisBackend(object):
                     raise TypeError("Unknown is_ready type: '%r'" % is_ready)
 
                 # We need to get all the ids
-                keys.extend(self.client.sunion(
-                    self._get_key_for_index("state", state)
-                    for state in searched_states))
+
+                if not self.settings.get('using_twemproxy'):
+                    keys.extend(self.client.sunion(
+                        self._get_key_for_index("state", state)
+                        for state in searched_states))
+                else:
+                    # twemproxy does not support sunion.
+                    ids = set()
+
+                    for state in searched_states:
+                        ids.update(self.client.smembers(
+                            self._get_key_for_index("state", state)
+                        ))
+
+                    keys.extend(ids)
 
             if "state" in filters:
                 state = filters.pop("state")

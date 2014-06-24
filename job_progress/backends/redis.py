@@ -204,6 +204,7 @@ class RedisBackend(object):
                         self._get_key_for_index("state", state)
                         for state in searched_states))
                 else:
+                    # twemproxy does not support sunion.
                     ids = set()
 
                     for state in searched_states:

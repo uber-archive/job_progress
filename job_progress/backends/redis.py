@@ -58,7 +58,7 @@ class RedisBackend(object):
         client.set(self._get_metadata_key(key, "state"), state)
         client.sadd(self._get_key_for_index("all"), key)
         client.sadd(self._get_key_for_index("state", state), key)
-        if using_twemproxy:
+        if not using_twemproxy:
             client.execute()
 
     def delete_job(self, id_, state):
@@ -74,7 +74,7 @@ class RedisBackend(object):
         client.delete(self._get_metadata_key(key, "heartbeat"))
         client.srem(self._get_key_for_index("all"), key)
         client.srem(self._get_key_for_index("state", state), key)
-        if using_twemproxy:
+        if not using_twemproxy:
             client.execute()
 
     def get_data(self, id_):

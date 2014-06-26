@@ -16,6 +16,8 @@ develop:
 
 release: clean test
 	prerelease
+	git push
+	git push --tags
 	echo "Now upload to the internal PyPi"
 
 clean: clean-build clean-pyc

@@ -15,7 +15,7 @@ develop:
 	python setup.py develop
 
 release: clean test
-	prerelease
+	prerelease && release
 	git push
 	git push --tags
 	echo "Now upload to the internal PyPi"

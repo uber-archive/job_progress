@@ -14,8 +14,9 @@ bootstrap:
 develop:
 	python setup.py develop
 
-release: clean
-	prerelease && release
+release: clean test
+	prerelease
+	echo "Now upload to the internal PyPi"
 
 clean: clean-build clean-pyc
 

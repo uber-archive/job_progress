@@ -30,6 +30,7 @@ docs/_build
 
 # pyenv
 .python-version
+env/
 
 # IDE
 .idea

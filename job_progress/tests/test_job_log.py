@@ -139,12 +139,18 @@ def test_invalid_filter():
 def test_staled_job():
     """Verify that we can check if a job is staled."""
     job = JobProgress({}, amount=1)
-
     assert job.is_staled is False
 
-    JobProgress.backend.update_settings({"heartbeat_expiration": 1})
     job.state = states.STARTED
+    job.add_one_success()
+    assert job.is_staled is False
+
+    # delete the heartbeat key.
+    job.backend.client.delete(job.backend._get_metadata_key(
+        job.backend._get_key_for_job_id(job.id), "heartbeat"
+    ))
     assert job.is_staled is True
+
     utils.fail_staled_jobs(JobProgress.session)
     assert job.state == states.FAILURE
 

@@ -149,7 +149,9 @@ class RedisBackend(object):
     def is_staled(self, id_):
         """Return True if job at id_ is staled."""
         key = self._get_key_for_job_id(id_)
-        return not bool(self.client.exists(key))
+        return not bool(self.client.exists(
+            self._get_metadata_key(key, "heartbeat")
+        ))
 
     @classmethod
     def _get_key_for_job_id(cls, id_):

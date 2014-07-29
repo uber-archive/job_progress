@@ -1,7 +1,7 @@
 Changelog for job_progress
 ==========================
 
-0.0.7 (2014-06-26)
+0.0.8 (2014-07-29)
 ------------------
 
 - Started tracking changes

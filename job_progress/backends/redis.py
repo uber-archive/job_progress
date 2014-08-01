@@ -98,9 +98,9 @@ class RedisBackend(object):
         key = self._get_key_for_job_id(id_)
         self.client.hincrby(self._get_metadata_key(key, "progress"),
                             state, 1)
-        self.update_hearbeat(key)
+        self.update_heartbeat(key)
 
-    def update_hearbeat(self, key):
+    def update_heartbeat(self, key):
         """Update the task's heartbeat."""
         self.client.setex(self._get_metadata_key(key, "heartbeat"),
                           self.settings["heartbeat_expiration"],
@@ -125,7 +125,7 @@ class RedisBackend(object):
         # The first thing we do is update the heartbeat to prevent any
         # race condition
         if state == states.STARTED:
-            self.update_hearbeat(key)
+            self.update_heartbeat(key)
 
         # First set the state
         state_key = self._get_metadata_key(key, "state")

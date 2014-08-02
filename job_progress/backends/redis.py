@@ -141,8 +141,12 @@ class RedisBackend(object):
         new_state_key = self._get_key_for_index("state", new_state)
 
         if previous_state:
-            # This is an atomic operation.
-            self.client.smove(previous_state_key, new_state_key, key)
+            if not self.settings.get('using_twemproxy'):
+                # This is an atomic operation.
+                self.client.smove(previous_state_key, new_state_key, key)
+            else:
+                self.client.srem(previous_state_key, key)
+                self.client.sadd(new_state_key, key)
         else:
             self.client.sadd(new_state_key, key)
 

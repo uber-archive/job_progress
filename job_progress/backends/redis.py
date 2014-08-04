@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import redis
+import warnings
 
 from job_progress import states
 from job_progress.cached_property import cached_property
@@ -145,6 +146,9 @@ class RedisBackend(object):
                 # This is an atomic operation.
                 self.client.smove(previous_state_key, new_state_key, key)
             else:
+                # This is not an atomic operation
+                warnings.warn('Moving jobs between states with Twemproxy'
+                              'is a non-atomic operation')
                 self.client.srem(previous_state_key, key)
                 self.client.sadd(new_state_key, key)
         else:

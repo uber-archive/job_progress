@@ -36,6 +36,11 @@ Installation
 
 JobProgress is not yet on pip.
 
+Twemproxy
+---------
+
+When using Twemproxy, moving a job between states is a non-atomic operation.
+
 License
 -------
 

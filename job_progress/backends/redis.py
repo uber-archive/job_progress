@@ -26,7 +26,7 @@ class RedisBackend(object):
     def __init__(self, settings=None, get_client=None):
         self.settings = DEFAULT_SETTINGS.copy()
         if settings:
-            self.settings.update(settings)
+            self.update_settings(settings)
 
         self.get_client = get_client
 
@@ -36,6 +36,10 @@ class RedisBackend(object):
         :param dict settings:
         """
         self.settings.update(settings)
+
+        if self.settings.get('using_twemproxy'):
+            warnings.warn('Moving jobs between states with Twemproxy'
+                          'is a non-atomic operation')
 
     @cached_property
     def client(self):
@@ -147,8 +151,6 @@ class RedisBackend(object):
                 self.client.smove(previous_state_key, new_state_key, key)
             else:
                 # This is not an atomic operation
-                warnings.warn('Moving jobs between states with Twemproxy'
-                              'is a non-atomic operation')
                 self.client.srem(previous_state_key, key)
                 self.client.sadd(new_state_key, key)
         else:

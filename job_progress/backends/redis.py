@@ -111,6 +111,30 @@ class RedisBackend(object):
                           self.settings["heartbeat_expiration"],
                           1)
 
+    def update_object_state(self, id_, from_state, to_state, object):
+        """Update one object's state."""
+        if not to_state:
+            raise ValueError("Must have to_state!")
+        key = self._get_key_for_job_id(id_)
+        self.client.sadd(
+            self._get_metadata_key(key, "info:" + to_state),
+            object
+        )
+
+        if not from_state:
+            return
+        self.client.srem(
+            self._get_metadata_key(key, "info:" + from_state),
+            object
+        )
+
+    def get_objects_by_state(self, id_, state):
+        if not state:
+            return None
+        key = self._get_key_for_job_id(id_)
+        metadata_key = self._get_metadata_key(key, "info:" + state)
+        return self.client.smembers(metadata_key)
+
     def get_progress(self, id_):
         """Return progress."""
         key = self._get_key_for_job_id(id_)

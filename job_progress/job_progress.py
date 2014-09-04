@@ -76,6 +76,12 @@ class JobProgress(object):
         """Add one success state."""
         return self.add_one_progress_state(states.SUCCESS)
 
+    def add_one_failure_object(self):
+        pass
+
+    def add_one_success_object(self):
+        pass
+
     def get_progress(self):
         """Return the progress.
 

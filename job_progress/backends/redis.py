@@ -79,6 +79,13 @@ class RedisBackend(object):
         client.delete(self._get_metadata_key(key, "heartbeat"))
         client.srem(self._get_key_for_index("all"), key)
         client.srem(self._get_key_for_index("state", state), key)
+
+        # delete stated objects
+        object_states = client.smembers(self._get_metadata_key(key, "ostates"))
+        for state in object_states:
+            client.delete(self._get_metadata_key(key, "ostate:" + state))
+        client.delete(self._get_metadata_key(key, "ostates"))
+
         if not using_twemproxy:
             client.execute()
 
@@ -111,29 +118,30 @@ class RedisBackend(object):
                           self.settings["heartbeat_expiration"],
                           1)
 
-    def update_object_state(self, id_, from_state, to_state, object):
-        """Update one object's state."""
-        if not to_state:
-            raise ValueError("Must have to_state!")
+    def add_one_object_state(self, id_, state, object):
+        """Add one object to a state."""
+        if not state:
+            raise ValueError("Must have state!")
         key = self._get_key_for_job_id(id_)
         self.client.sadd(
-            self._get_metadata_key(key, "info:" + to_state),
-            object
+            self._get_metadata_key(key, "ostate:" + state),
+            object,
         )
-
-        if not from_state:
-            return
-        self.client.srem(
-            self._get_metadata_key(key, "info:" + from_state),
-            object
+        self.client.sadd(
+            self._get_metadata_key(key, "ostates"),
+            state,
         )
 
     def get_objects_by_state(self, id_, state):
         if not state:
             return None
         key = self._get_key_for_job_id(id_)
-        metadata_key = self._get_metadata_key(key, "info:" + state)
+        metadata_key = self._get_metadata_key(key, "ostate:" + state)
         return self.client.smembers(metadata_key)
+
+    def get_all_object_states(self, id_):
+        key = self._get_key_for_job_id(id_)
+        return self.client.smembers(self._get_metadata_key(key, "ostates"))
 
     def get_progress(self, id_):
         """Return progress."""

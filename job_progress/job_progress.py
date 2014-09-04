@@ -77,27 +77,28 @@ class JobProgress(object):
         return self.add_one_progress_state(states.SUCCESS)
 
     def add_one_failure_object(self, object):
-        return self.backend.update_object_state(
+        return self.backend.add_one_object_state(
             self.id,
-            None,
             states.FAILURE,
             object
         )
 
     def add_one_success_object(self, object):
-        return self.backend.update_object_state(
+        return self.backend.add_one_object_state(
             self.id,
-            None,
             states.SUCCESS,
             object
         )
 
-    def get_objects(self, states=[states.SUCCESS, states.FAILURE]):
-        if isinstance(states, basestring):
-            states = [states]
+    def get_objects(self, states_=None):
+        if states_ is None:
+            states_ = self.backend.get_all_object_states(self.id)
+
+        if isinstance(states_, basestring):
+            states_ = [states_]
 
         result = {}
-        for state in states:
+        for state in states_:
             objects = self.backend.get_objects_by_state(self.id, state)
             if objects is not None and len(objects) > 0:
                 result[state] = objects

@@ -183,6 +183,10 @@ def test_delete():
     job = JobProgress({"a": 1}, amount=1)
     # To trigger indexing
     job.state = states.STARTED
+
+    # Add a stated object
+    job.add_one_success_object('111')
+
     redis_client = redis.StrictRedis.from_url(TEST_SETTINGS["url"])
 
     job.delete()

@@ -41,65 +41,49 @@ def test_initialize_without_twemproxy():
     assert fake_pipeline.execute.called is False
 
 
-def test_update_object_state():
+def test_object_state_workflow():
     """
-    Test that update_object_state will move object
-    to the right bucket
+    Test that add_one_object_state will add bject
+    to the right states
     """
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
-    progress_id = RedisBackend._get_key_for_job_id('1')
-    pending_key = RedisBackend._get_metadata_key(progress_id, "info:pending")
-    success_key = RedisBackend._get_metadata_key(progress_id, "info:success")
+    id = '1'
+    state1 = 'SUCCESS'
+    state2 = 'FAILURE'
 
-    # Push two object into pending bucket
-    redis_backend.update_object_state('1', None, 'pending', '12')
-    redis_backend.update_object_state('1', None, 'pending', 'abc')
-    assert redis_backend.client.smembers(pending_key) == set(['12', 'abc'])
+    # Push an object into success state and check
+    redis_backend.add_one_object_state(id, state1, 'a')
+    assert redis_backend.get_objects_by_state(id, state1) == set(['a'])
 
-    # Move the first object into success bucket
-    redis_backend.update_object_state('1', 'pending', 'success', '12')
-    assert redis_backend.client.smembers(success_key) == set(['12'])
-    assert redis_backend.client.smembers(pending_key) == set(['abc'])
+    # Push another object into success state and check
+    redis_backend.add_one_object_state(id, state1, 'b')
+    assert redis_backend.get_objects_by_state(id, state1) == set(['a', 'b'])
+
+    # Push an object into failure state and check all states
+    redis_backend.add_one_object_state(id, state2, 'c')
+    assert redis_backend.get_all_object_states(id) == set([state1, state2])
 
     redis_backend.client.flushdb()
 
 
-def test_update_object_state_failed_without_to_state():
+def test_add_one_object_state_failed_without_state():
     """
-    Test that update_object_state should raise ValueError
-    if to_state is falsy
+    Test that add_one_object_state should raise ValueError
+    if state is falsy
     """
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 
     with pytest.raises(ValueError):
-        redis_backend.update_object_state('1', None, None, '123')
+        redis_backend.add_one_object_state('1', None, '123')
 
     redis_backend.client.flushdb()
 
 
-def test_get_objects_by_state():
-    """
-    Test that get_objects_by_state should return all objects
-    in that state
-    """
-    settings = dict(TEST_SETTINGS)
-    settings['using_twemproxy'] = True
-    redis_backend = RedisBackend(settings)
-
-    # Push two object into pending bucket
-    redis_backend.update_object_state('1', None, 'pending', '12')
-    redis_backend.update_object_state('1', None, 'pending', 'abc')
-    assert (redis_backend.get_objects_by_state('1', 'pending')
-            == set(['12', 'abc']))
-
-    redis_backend.client.flushdb()
-
-
-def test_get_objects_by_state_failed_without_state():
+def test_get_one_objects_by_state_failed_without_state():
     """
     Test that get_objects_by_state should return None
     if no state specified
@@ -108,7 +92,7 @@ def test_get_objects_by_state_failed_without_state():
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 
-    # Push two object into pending bucket
+    # Push two object into pending states
     assert redis_backend.get_objects_by_state('1', None) is None
 
     redis_backend.client.flushdb()
@@ -123,7 +107,7 @@ def test_get_objects_by_state_does_not_exist():
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 
-    # Push two object into pending bucket
+    # Push two object into pending states
     assert redis_backend.get_objects_by_state('1', 'FOO') == set([])
 
     redis_backend.client.flushdb()

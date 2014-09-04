@@ -89,8 +89,6 @@ def test_get_objects_by_state():
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
-    progress_id = RedisBackend._get_key_for_job_id('1')
-    pending_key = RedisBackend._get_metadata_key(progress_id, "info:pending")
 
     # Push two object into pending bucket
     redis_backend.update_object_state('1', None, 'pending', '12')
@@ -103,7 +101,7 @@ def test_get_objects_by_state():
 
 def test_get_objects_by_state_failed_without_state():
     """
-    Test that get_objects_by_state should return empty set
+    Test that get_objects_by_state should return None
     if no state specified
     """
     settings = dict(TEST_SETTINGS)
@@ -112,5 +110,20 @@ def test_get_objects_by_state_failed_without_state():
 
     # Push two object into pending bucket
     assert redis_backend.get_objects_by_state('1', None) is None
+
+    redis_backend.client.flushdb()
+
+
+def test_get_objects_by_state_does_not_exist():
+    """
+    Test that get_objects_by_state should return empty set
+    if state is not existing
+    """
+    settings = dict(TEST_SETTINGS)
+    settings['using_twemproxy'] = True
+    redis_backend = RedisBackend(settings)
+
+    # Push two object into pending bucket
+    assert redis_backend.get_objects_by_state('1', 'FOO') == set([])
 
     redis_backend.client.flushdb()

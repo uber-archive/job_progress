@@ -188,3 +188,29 @@ def test_delete():
     job.delete()
 
     assert len(redis_client.keys("*")) == 0
+
+
+def test_object_state():
+    """Verify that stated object can be successfully stored and read"""
+    job = JobProgress({"a": 1}, amount=10)
+
+    job.add_one_success_object('111')
+    assert job.get_objects(states.SUCCESS) == {
+        states.SUCCESS: set(['111'])
+    }
+    assert job.get_objects() == {
+        states.SUCCESS: set(['111'])
+    }
+
+    job.add_one_success_object('222')
+    job.add_one_failure_object('333')
+    assert job.get_objects(states.SUCCESS) == {
+        states.SUCCESS: set(['111', '222'])
+    }
+    assert job.get_objects(states.FAILURE) == {
+        states.FAILURE: set(['333'])
+    }
+    assert job.get_objects() == {
+        states.SUCCESS: set(['111', '222']),
+        states.FAILURE: set(['333'])
+    }

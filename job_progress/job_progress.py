@@ -76,11 +76,33 @@ class JobProgress(object):
         """Add one success state."""
         return self.add_one_progress_state(states.SUCCESS)
 
-    def add_one_failure_object(self):
-        pass
+    def add_one_failure_object(self, object):
+        return self.backend.update_object_state(
+            self.id,
+            None,
+            states.FAILURE,
+            object
+        )
 
-    def add_one_success_object(self):
-        pass
+    def add_one_success_object(self, object):
+        return self.backend.update_object_state(
+            self.id,
+            None,
+            states.SUCCESS,
+            object
+        )
+
+    def get_objects(self, states=[states.SUCCESS, states.FAILURE]):
+        if isinstance(states, basestring):
+            states = [states]
+
+        result = {}
+        for state in states:
+            objects = self.backend.get_objects_by_state(self.id, state)
+            if objects is not None and len(objects) > 0:
+                result[state] = objects
+
+        return result
 
     def get_progress(self):
         """Return the progress.

@@ -80,11 +80,13 @@ class RedisBackend(object):
         client.srem(self._get_key_for_index("all"), key)
         client.srem(self._get_key_for_index("state", state), key)
 
-        # delete stated objects
-        object_states = client.smembers(self._get_metadata_key(key, "ostates"))
-        for state in object_states:
-            client.delete(self._get_metadata_key(key, "ostate:" + state))
-        client.delete(self._get_metadata_key(key, "ostates"))
+        # delete detailed progress
+        detailed_progress_states = client.smembers(
+            self._get_metadata_key(key, "detailed_progress_states"),
+        )
+        for state in detailed_progress_states:
+            client.delete(self._get_detailed_progress_key(key, state))
+        client.delete(self._get_metadata_key(key, "detailed_progress_states"))
 
         if not using_twemproxy:
             client.execute()
@@ -118,30 +120,31 @@ class RedisBackend(object):
                           self.settings["heartbeat_expiration"],
                           1)
 
-    def add_one_object_state(self, id_, state, object):
-        """Add one object to a state."""
+    def add_one_detailed_progress_state(self, id_, state, value):
+        """Add one value to a state."""
         if not state:
             raise ValueError("Must have state!")
         key = self._get_key_for_job_id(id_)
+        self.client.sadd(self._get_detailed_progress_key(key, state), value)
         self.client.sadd(
-            self._get_metadata_key(key, "ostate:" + state),
-            object,
-        )
-        self.client.sadd(
-            self._get_metadata_key(key, "ostates"),
+            self._get_metadata_key(key, "detailed_progress_states"),
             state,
         )
 
-    def get_objects_by_state(self, id_, state):
+    def get_detailed_progress_by_state(self, id_, state):
+        """Get detailed progress for specific state"""
         if not state:
             return None
         key = self._get_key_for_job_id(id_)
-        metadata_key = self._get_metadata_key(key, "ostate:" + state)
+        metadata_key = self._get_detailed_progress_key(key, state)
         return self.client.smembers(metadata_key)
 
-    def get_all_object_states(self, id_):
+    def get_all_detailed_progress_states(self, id_):
+        """Get all available detailed progress state"""
         key = self._get_key_for_job_id(id_)
-        return self.client.smembers(self._get_metadata_key(key, "ostates"))
+        return self.client.smembers(
+            self._get_metadata_key(key, "detailed_progress_states"),
+        )
 
     def get_progress(self, id_):
         """Return progress."""
@@ -216,6 +219,14 @@ class RedisBackend(object):
         :param str name:
         """
         return "{}:{}".format(key, name)
+
+    @classmethod
+    def _get_detailed_progress_key(cls, key, state):
+        """Return redis key for detailed progress for a state
+        :param str key:
+        :param str state:
+        """
+        return cls._get_metadata_key(key, "detailed_progress:" + state)
 
     def get_ids(self, **filters):
         """Query the backend.

@@ -76,32 +76,37 @@ class JobProgress(object):
         """Add one success state."""
         return self.add_one_progress_state(states.SUCCESS)
 
-    def add_one_failure_object(self, object):
-        return self.backend.add_one_object_state(
+    def add_one_failure_detailed_progress(self, value):
+        """Add one detailed progress in state failure"""
+        return self.backend.add_one_detailed_progress_state(
             self.id,
             states.FAILURE,
-            object
+            value
         )
 
-    def add_one_success_object(self, object):
-        return self.backend.add_one_object_state(
+    def add_one_success_detailed_progress(self, value):
+        """Add one detailed progress in state success"""
+        return self.backend.add_one_detailed_progress_state(
             self.id,
             states.SUCCESS,
-            object
+            value
         )
 
-    def get_objects(self, states_=None):
+    def _get_detailed_progress_in_state(self, state):
+        """Get detailed progress in a specific state"""
+        return self.backend.get_detailed_progress_by_state(self.id, state)
+
+    def get_detailed_progress(self, states_=None):
+        """Get all detailed progress for the job"""
         if states_ is None:
-            states_ = self.backend.get_all_object_states(self.id)
+            states_ = self.backend.get_all_detailed_progress_states(self.id)
 
         if isinstance(states_, basestring):
             states_ = [states_]
 
         result = {}
         for state in states_:
-            objects = self.backend.get_objects_by_state(self.id, state)
-            if objects is not None and len(objects) > 0:
-                result[state] = objects
+            result[state] = self._get_detailed_progress_in_state(state)
 
         return result
 
@@ -131,7 +136,7 @@ class JobProgress(object):
 
         return progress
 
-    def to_dict(self):
+    def to_dict(self, verbose=False):
         """Return dict representation of the object."""
         returned = {
             "id": self.id,
@@ -141,6 +146,8 @@ class JobProgress(object):
             "is_ready": self.is_ready,
             "state": self.state,
         }
+        if verbose:
+            returned['detailed_progress'] = self.get_detailed_progress()
         return returned
 
     def delete(self):

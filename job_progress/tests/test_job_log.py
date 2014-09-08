@@ -184,8 +184,8 @@ def test_delete():
     # To trigger indexing
     job.state = states.STARTED
 
-    # Add a stated object
-    job.add_one_success_object('111')
+    # Add a detailed progress
+    job.add_one_success_detailed_progress('111')
 
     redis_client = redis.StrictRedis.from_url(TEST_SETTINGS["url"])
 
@@ -194,27 +194,31 @@ def test_delete():
     assert len(redis_client.keys("*")) == 0
 
 
-def test_object_state():
-    """Verify that stated object can be successfully stored and read"""
+def test_detailed_progress():
+    """Verify that detailed progress can be successfully stored and read"""
     job = JobProgress({"a": 1}, amount=10)
 
-    job.add_one_success_object('111')
-    assert job.get_objects(states.SUCCESS) == {
+    job.add_one_success_detailed_progress('111')
+    assert job.get_detailed_progress(states.SUCCESS) == {
         states.SUCCESS: set(['111'])
     }
-    assert job.get_objects() == {
+    assert job.get_detailed_progress() == {
         states.SUCCESS: set(['111'])
     }
 
-    job.add_one_success_object('222')
-    job.add_one_failure_object('333')
-    assert job.get_objects(states.SUCCESS) == {
+    job.add_one_success_detailed_progress('222')
+    job.add_one_failure_detailed_progress('333')
+    assert job.get_detailed_progress(states.SUCCESS) == {
         states.SUCCESS: set(['111', '222'])
     }
-    assert job.get_objects(states.FAILURE) == {
+    assert job.get_detailed_progress(states.FAILURE) == {
         states.FAILURE: set(['333'])
     }
-    assert job.get_objects() == {
+    assert job.get_detailed_progress() == {
+        states.SUCCESS: set(['111', '222']),
+        states.FAILURE: set(['333'])
+    }
+    assert job.to_dict(True)['detailed_progress'] == {
         states.SUCCESS: set(['111', '222']),
         states.FAILURE: set(['333'])
     }

@@ -78,6 +78,7 @@ class JobProgress(object):
 
     def add_one_failure_detailed_progress(self, value):
         """Add one detailed progress in state failure"""
+        self.add_one_failure()
         return self.backend.add_one_detailed_progress_state(
             self.id,
             states.FAILURE,
@@ -86,11 +87,32 @@ class JobProgress(object):
 
     def add_one_success_detailed_progress(self, value):
         """Add one detailed progress in state success"""
+        self.add_one_success()
         return self.backend.add_one_detailed_progress_state(
             self.id,
             states.SUCCESS,
             value
         )
+
+    def track(self, is_success, value=None):
+        """
+        Check if an object is failed or not. If failed, put it in
+        failure detailed progress and increase failure counter. If
+        not, put it in success detailed progress and increase
+        success counter.
+
+        If no value provided, only modify the counter.
+        """
+        if not is_success:
+            if value is None:
+                self.add_one_failure()
+            else:
+                self.add_one_failure_detailed_progress(value)
+        else:
+            if value is None:
+                self.add_one_success()
+            else:
+                self.add_one_success_detailed_progress(value)
 
     def _get_detailed_progress_in_state(self, state):
         """Get detailed progress in a specific state"""

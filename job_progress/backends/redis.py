@@ -77,6 +77,7 @@ class RedisBackend(object):
         client.delete(self._get_metadata_key(key, "amount"))
         client.delete(self._get_metadata_key(key, "state"))
         client.delete(self._get_metadata_key(key, "heartbeat"))
+        client.delete(self._get_metadata_key(key, "progress"))
         client.srem(self._get_key_for_index("all"), key)
         client.srem(self._get_key_for_index("state", state), key)
 

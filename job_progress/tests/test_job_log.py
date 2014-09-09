@@ -222,3 +222,34 @@ def test_detailed_progress():
         states.SUCCESS: set(['111', '222']),
         states.FAILURE: set(['333'])
     }
+
+def test_track():
+    """Verify track function works as we expected"""
+    job = JobProgress({"a": 1}, amount=10)
+
+    # Track with a value
+    job.track(True, '123')
+    job.track(False, '456')
+    assert job.get_detailed_progress() == {
+        states.SUCCESS: set(['123']),
+        states.FAILURE: set(['456'])
+    }
+    assert job.get_progress() == {
+        states.SUCCESS: 1,
+        states.FAILURE: 1,
+        states.PENDING: 8,
+    }
+
+    # Track without value
+    job.track(True)
+    job.track(False)
+    assert job.get_detailed_progress() == {
+        states.SUCCESS: set(['123']),
+        states.FAILURE: set(['456'])
+    }
+    assert job.get_progress() == {
+        states.SUCCESS: 2,
+        states.FAILURE: 2,
+        states.PENDING: 6,
+    }
+

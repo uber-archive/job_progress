@@ -223,6 +223,7 @@ def test_detailed_progress():
         states.FAILURE: set(['333'])
     }
 
+
 def test_track():
     """Verify track function works as we expected"""
     job = JobProgress({"a": 1}, amount=10)
@@ -252,4 +253,3 @@ def test_track():
         states.FAILURE: 2,
         states.PENDING: 6,
     }
-

@@ -103,16 +103,16 @@ class JobProgress(object):
 
         If no value provided, only modify the counter.
         """
-        if not is_success:
-            if value is None:
-                self.add_one_failure()
-            else:
-                self.add_one_failure_detailed_progress(value)
-        else:
+        if is_success:
             if value is None:
                 self.add_one_success()
             else:
                 self.add_one_success_detailed_progress(value)
+        else:
+            if value is None:
+                self.add_one_failure()
+            else:
+                self.add_one_failure_detailed_progress(value)
 
     def _get_detailed_progress_in_state(self, state):
         """Get detailed progress in a specific state"""

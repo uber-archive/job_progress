@@ -13,7 +13,7 @@ Getting Started
 
 **Initialize JobProgress**
 
-Before create or load any job instance, setup up backend and create a session.
+Before creating or loading a job instance, we must setup JobProgress's backend and session. 
 
 .. code-block:: python
 
@@ -36,7 +36,7 @@ Before create or load any job instance, setup up backend and create a session.
     
 **Load Job by Id**
 
-You can load a existing job by its id.
+You can load an existing job by its id.
 
 .. code-block:: python
 

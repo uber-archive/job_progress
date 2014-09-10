@@ -77,7 +77,7 @@ class JobProgress(object):
         self.add_one_progress_state(states.SUCCESS, item_id)
 
     def track(self, is_success, item_id=None):
-        """Check if an object is failed or not. If failed, put it in
+        """Check if an object is_success or not. If failed, put it in
         failure detailed progress and increase failure counter. If
         not, put it in success detailed progress and increase success
         counter.
@@ -91,7 +91,7 @@ class JobProgress(object):
 
     def get_detailed_progress(self, states_=None):
         """Get all detailed progress for the job"""
-        if states_ is None:
+        if not states_:
             states_ = self.backend.get_all_detailed_progress_states(self.id)
 
         if isinstance(states_, basestring):

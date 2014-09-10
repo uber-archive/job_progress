@@ -1,4 +1,5 @@
 import mock
+import pytest
 import redis
 
 from job_progress import states
@@ -51,6 +52,19 @@ def test_initialize_without_twemproxy():
     assert fake_pipeline.execute.called is False
 
 
+def test_update_heartbeat():
+    """Test update_heartbeat will called client.setex function"""
+
+    settings = dict(TEST_SETTINGS)
+    settings['using_twemproxy'] = True
+    redis_backend = RedisBackend(settings)
+
+    redis_backend.client = mock.Mock()
+    redis_backend.update_heartbeat('foo')
+
+    assert redis_backend.client.setex.called is True
+
+
 def test_detailed_progress_with_item_id_workflow():
     """Test that add_one_detailed_progress_state will add bject
     to the right states
@@ -66,15 +80,16 @@ def test_detailed_progress_with_item_id_workflow():
 
 
 def test_get_detailed_progress_by_state_failed_without_state():
-    """Test that get_detailed_progress_by_state should return None
-    if no state specified
+    """Test that get_detailed_progress_by_state should raise
+    ValueError exception if no state specified
     """
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 
     # Push two value into pending states
-    assert redis_backend.get_detailed_progress_by_state('1', None) is None
+    with pytest.raises(ValueError):
+        redis_backend.get_detailed_progress_by_state('1', None)
 
 
 def test_get_detailed_progress_by_state_does_not_exist():

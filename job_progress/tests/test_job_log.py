@@ -183,18 +183,15 @@ def test_delete():
     job = JobProgress({"a": 1}, amount=1)
     # To trigger indexing
     job.state = states.STARTED
-
-    # Add a success progress
     job.add_one_success('111')
 
     redis_client = redis.StrictRedis.from_url(TEST_SETTINGS["url"])
-
     job.delete()
 
     assert len(redis_client.keys("*")) == 0
 
 
-def test_add_one_success_with_item_id_workflow():
+def test_add_one_success_with_item_id_adds_detailed_progress():
     """Verify that add_one_success with item_id will add detailed progress"""
     job = JobProgress({"a": 1}, amount=10)
 
@@ -204,7 +201,18 @@ def test_add_one_success_with_item_id_workflow():
     }
 
 
-def test_get_detailed_progress_without_state():
+def test_get_detailed_progress_with_states_returns_progress_of_asked_states():
+    """Verify that get_detailed_progress without state"""
+    job = JobProgress({"a": 1}, amount=10)
+
+    job.add_one_success('111')
+    job.add_one_failure('333')
+    assert job.get_detailed_progress(states.SUCCESS) == {
+        states.SUCCESS: set(['111']),
+    }
+
+
+def test_get_detailed_progress_without_states_returns_progress_of_all_states():
     """Verify that get_detailed_progress with state"""
     job = JobProgress({"a": 1}, amount=10)
 
@@ -216,7 +224,7 @@ def test_get_detailed_progress_without_state():
     }
 
 
-def test_to_dict():
+def test_to_dict_with_include_details_option_returns_detailed_progress():
     """Verify to_dict with includes_details will output detailed progress"""
     job = JobProgress({"a": 1}, amount=10)
 
@@ -228,7 +236,7 @@ def test_to_dict():
     }
 
 
-def test_track_with_item_id():
+def test_track_with_item_id_adds_normal_and_detailed_progress():
     """Verify track function works with item id"""
     job = JobProgress({"a": 1}, amount=10)
 
@@ -252,7 +260,7 @@ def test_track_with_item_id():
     }
 
 
-def test_track_without_item_id():
+def test_track_without_item_id_adds_only_normal_progress():
     """Verify track function works without item id"""
     job = JobProgress({"a": 1}, amount=10)
 

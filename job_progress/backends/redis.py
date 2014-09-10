@@ -108,7 +108,7 @@ class RedisBackend(object):
             "previous_state": state,
         }
 
-    def add_one_progress_state(self, id_, state, item_id):
+    def add_one_progress_state(self, id_, state, item_id=None):
         """Add one unit state."""
         key = self._get_key_for_job_id(id_)
         self.client.hincrby(self._get_metadata_key(key, "progress"),
@@ -137,7 +137,7 @@ class RedisBackend(object):
     def get_detailed_progress_by_state(self, id_, state):
         """Get detailed progress for specific state"""
         if not state:
-            return None
+            raise ValueError('Argument "state" cannot be None')
         key = self._get_key_for_job_id(id_)
         metadata_key = self._get_detailed_progress_key(key, state)
         return self.client.smembers(metadata_key)

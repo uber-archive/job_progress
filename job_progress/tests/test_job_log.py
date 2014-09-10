@@ -184,8 +184,8 @@ def test_delete():
     # To trigger indexing
     job.state = states.STARTED
 
-    # Add a detailed progress
-    job.add_one_success_detailed_progress('111')
+    # Add a success progress
+    job.add_one_success('111')
 
     redis_client = redis.StrictRedis.from_url(TEST_SETTINGS["url"])
 
@@ -194,62 +194,79 @@ def test_delete():
     assert len(redis_client.keys("*")) == 0
 
 
-def test_detailed_progress():
-    """Verify that detailed progress can be successfully stored and read"""
+def test_add_one_success_with_item_id_workflow():
+    """Verify that add_one_success with item_id will add detailed progress"""
     job = JobProgress({"a": 1}, amount=10)
 
-    job.add_one_success_detailed_progress('111')
+    job.add_one_success('111')
     assert job.get_detailed_progress(states.SUCCESS) == {
-        states.SUCCESS: set(['111'])
-    }
-    assert job.get_detailed_progress() == {
         states.SUCCESS: set(['111'])
     }
 
-    job.add_one_success_detailed_progress('222')
-    job.add_one_failure_detailed_progress('333')
-    assert job.get_detailed_progress(states.SUCCESS) == {
-        states.SUCCESS: set(['111', '222'])
-    }
-    assert job.get_detailed_progress(states.FAILURE) == {
-        states.FAILURE: set(['333'])
-    }
+
+def test_get_detailed_progress_without_state():
+    """Verify that get_detailed_progress with state"""
+    job = JobProgress({"a": 1}, amount=10)
+
+    job.add_one_success('111')
+    job.add_one_failure('333')
     assert job.get_detailed_progress() == {
-        states.SUCCESS: set(['111', '222']),
+        states.SUCCESS: set(['111']),
         states.FAILURE: set(['333'])
     }
+
+
+def test_to_dict():
+    """Verify to_dict with includes_details will output detailed progress"""
+    job = JobProgress({"a": 1}, amount=10)
+
+    job.add_one_success('111')
+    job.add_one_failure('333')
     assert job.to_dict(True)['detailed_progress'] == {
-        states.SUCCESS: set(['111', '222']),
+        states.SUCCESS: set(['111']),
         states.FAILURE: set(['333'])
     }
 
 
-def test_track():
-    """Verify track function works as we expected"""
+def test_track_with_item_id():
+    """Verify track function works with item id"""
     job = JobProgress({"a": 1}, amount=10)
 
-    # Track with a value
     job.track(True, '123')
     job.track(False, '456')
-    assert job.get_detailed_progress() == {
-        states.SUCCESS: set(['123']),
-        states.FAILURE: set(['456'])
-    }
-    assert job.get_progress() == {
-        states.SUCCESS: 1,
-        states.FAILURE: 1,
-        states.PENDING: 8,
+    assert job.to_dict(True) == {
+        'amount': 10,
+        'data': {'a': 1},
+        'id': mock.ANY,
+        'is_ready': mock.ANY,
+        'progress': {
+            states.SUCCESS: 1,
+            states.FAILURE: 1,
+            states.PENDING: 8,
+        },
+        'state': 'PENDING',
+        'detailed_progress': {
+            states.SUCCESS: set(['123']),
+            states.FAILURE: set(['456']),
+        },
     }
 
-    # Track without value
+
+def test_track_without_item_id():
+    """Verify track function works without item id"""
+    job = JobProgress({"a": 1}, amount=10)
+
     job.track(True)
     job.track(False)
-    assert job.get_detailed_progress() == {
-        states.SUCCESS: set(['123']),
-        states.FAILURE: set(['456'])
-    }
-    assert job.get_progress() == {
-        states.SUCCESS: 2,
-        states.FAILURE: 2,
-        states.PENDING: 6,
+    assert job.to_dict() == {
+        'amount': 10,
+        'data': {'a': 1},
+        'id': mock.ANY,
+        'is_ready': mock.ANY,
+        'progress': {
+            states.SUCCESS: 1,
+            states.FAILURE: 1,
+            states.PENDING: 8,
+        },
+        'state': 'PENDING',
     }

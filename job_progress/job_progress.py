@@ -64,59 +64,30 @@ class JobProgress(object):
         """Return True if staled."""
         return self.state == states.STARTED and self.backend.is_staled(self.id)
 
-    def add_one_progress_state(self, state):
+    def add_one_progress_state(self, state, item_id=None):
         """Add one unit status."""
-        return self.backend.add_one_progress_state(self.id, state)
+        return self.backend.add_one_progress_state(self.id, state, item_id)
 
-    def add_one_failure(self):
+    def add_one_failure(self, item_id=None):
         """Add one failure state."""
-        return self.add_one_progress_state(states.FAILURE)
+        self.add_one_progress_state(states.FAILURE, item_id)
 
-    def add_one_success(self):
+    def add_one_success(self, item_id=None):
         """Add one success state."""
-        return self.add_one_progress_state(states.SUCCESS)
+        self.add_one_progress_state(states.SUCCESS, item_id)
 
-    def add_one_failure_detailed_progress(self, value):
-        """Add one detailed progress in state failure"""
-        self.add_one_failure()
-        return self.backend.add_one_detailed_progress_state(
-            self.id,
-            states.FAILURE,
-            value
-        )
-
-    def add_one_success_detailed_progress(self, value):
-        """Add one detailed progress in state success"""
-        self.add_one_success()
-        return self.backend.add_one_detailed_progress_state(
-            self.id,
-            states.SUCCESS,
-            value
-        )
-
-    def track(self, is_success, value=None):
-        """
-        Check if an object is failed or not. If failed, put it in
+    def track(self, is_success, item_id=None):
+        """Check if an object is failed or not. If failed, put it in
         failure detailed progress and increase failure counter. If
-        not, put it in success detailed progress and increase
-        success counter.
+        not, put it in success detailed progress and increase success
+        counter.
 
         If no value provided, only modify the counter.
         """
         if is_success:
-            if value is None:
-                self.add_one_success()
-            else:
-                self.add_one_success_detailed_progress(value)
+            self.add_one_success(item_id)
         else:
-            if value is None:
-                self.add_one_failure()
-            else:
-                self.add_one_failure_detailed_progress(value)
-
-    def _get_detailed_progress_in_state(self, state):
-        """Get detailed progress in a specific state"""
-        return self.backend.get_detailed_progress_by_state(self.id, state)
+            self.add_one_failure(item_id)
 
     def get_detailed_progress(self, states_=None):
         """Get all detailed progress for the job"""
@@ -128,7 +99,9 @@ class JobProgress(object):
 
         result = {}
         for state in states_:
-            result[state] = self._get_detailed_progress_in_state(state)
+            result[state] = self.backend.get_detailed_progress_by_state(
+                self.id, state
+            )
 
         return result
 
@@ -158,7 +131,7 @@ class JobProgress(object):
 
         return progress
 
-    def to_dict(self, verbose=False):
+    def to_dict(self, include_details=False):
         """Return dict representation of the object."""
         returned = {
             "id": self.id,
@@ -168,7 +141,7 @@ class JobProgress(object):
             "is_ready": self.is_ready,
             "state": self.state,
         }
-        if verbose:
+        if include_details:
             returned['detailed_progress'] = self.get_detailed_progress()
         return returned
 

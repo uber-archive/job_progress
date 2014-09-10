@@ -108,29 +108,31 @@ class RedisBackend(object):
             "previous_state": state,
         }
 
-    def add_one_progress_state(self, id_, state):
+    def add_one_progress_state(self, id_, state, item_id):
         """Add one unit state."""
         key = self._get_key_for_job_id(id_)
         self.client.hincrby(self._get_metadata_key(key, "progress"),
                             state, 1)
-        self.update_hearbeat(key)
 
-    def update_hearbeat(self, key):
+        # Add detailed progress if applicable
+        if item_id is not None:
+            self.client.sadd(
+                self._get_detailed_progress_key(key, state),
+                item_id
+            )
+            self.client.sadd(
+                self._get_metadata_key(key, "detailed_progress_states"),
+                state,
+            )
+
+        # Refresh heartbeat
+        self.update_heartbeat(key)
+
+    def update_heartbeat(self, key):
         """Update the task's heartbeat."""
         self.client.setex(self._get_metadata_key(key, "heartbeat"),
                           self.settings["heartbeat_expiration"],
                           1)
-
-    def add_one_detailed_progress_state(self, id_, state, value):
-        """Add one value to a state."""
-        if not state:
-            raise ValueError("Must have state!")
-        key = self._get_key_for_job_id(id_)
-        self.client.sadd(self._get_detailed_progress_key(key, state), value)
-        self.client.sadd(
-            self._get_metadata_key(key, "detailed_progress_states"),
-            state,
-        )
 
     def get_detailed_progress_by_state(self, id_, state):
         """Get detailed progress for specific state"""
@@ -166,7 +168,7 @@ class RedisBackend(object):
         # The first thing we do is update the heartbeat to prevent any
         # race condition
         if state == states.STARTED:
-            self.update_hearbeat(key)
+            self.update_heartbeat(key)
 
         # First set the state
         state_key = self._get_metadata_key(key, "state")

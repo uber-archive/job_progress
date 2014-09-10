@@ -1,10 +1,20 @@
 import mock
-
-import pytest
+import redis
 
 from job_progress import states
 from job_progress.backends.redis import RedisBackend
 from job_progress.tests import TEST_SETTINGS
+
+
+def teardown_function(function):
+    # Flush the db.
+    _flush_db(TEST_SETTINGS["url"])
+
+
+def _flush_db(url):
+    """Flush a Redis database."""
+    client = redis.StrictRedis.from_url(url)
+    client.flushdb()
 
 
 def test_initialize_with_twemproxy():
@@ -41,9 +51,8 @@ def test_initialize_without_twemproxy():
     assert fake_pipeline.execute.called is False
 
 
-def test_detailed_progress_workflow():
-    """
-    Test that add_one_detailed_progress_state will add bject
+def test_detailed_progress_with_item_id_workflow():
+    """Test that add_one_detailed_progress_state will add bject
     to the right states
     """
     settings = dict(TEST_SETTINGS)
@@ -51,41 +60,13 @@ def test_detailed_progress_workflow():
     redis = RedisBackend(settings)
     id = '1'
     s1 = 'SUCCESS'
-    s2 = 'FAILURE'
 
-    # Push an value into success state and check
-    redis.add_one_detailed_progress_state(id, s1, 'a')
+    redis.add_one_progress_state(id, s1, 'a')
     assert redis.get_detailed_progress_by_state(id, s1) == set(['a'])
-
-    # Push another value into success state and check
-    redis.add_one_detailed_progress_state(id, s1, 'b')
-    assert redis.get_detailed_progress_by_state(id, s1) == set(['a', 'b'])
-
-    # Push an value into failure state and check all states
-    redis.add_one_detailed_progress_state(id, s2, 'c')
-    assert redis.get_all_detailed_progress_states(id) == set([s1, s2])
-
-    redis.client.flushdb()
-
-
-def test_add_one_detailed_progress_failed_without_state():
-    """
-    Test that add_one_detailed_progress_state should raise ValueError
-    if state is falsy
-    """
-    settings = dict(TEST_SETTINGS)
-    settings['using_twemproxy'] = True
-    redis_backend = RedisBackend(settings)
-
-    with pytest.raises(ValueError):
-        redis_backend.add_one_detailed_progress_state('1', None, '123')
-
-    redis_backend.client.flushdb()
 
 
 def test_get_detailed_progress_by_state_failed_without_state():
-    """
-    Test that get_detailed_progress_by_state should return None
+    """Test that get_detailed_progress_by_state should return None
     if no state specified
     """
     settings = dict(TEST_SETTINGS)
@@ -95,12 +76,9 @@ def test_get_detailed_progress_by_state_failed_without_state():
     # Push two value into pending states
     assert redis_backend.get_detailed_progress_by_state('1', None) is None
 
-    redis_backend.client.flushdb()
-
 
 def test_get_detailed_progress_by_state_does_not_exist():
-    """
-    Test that get_detailed_progress_by_state should return empty set
+    """Test that get_detailed_progress_by_state should return empty set
     if state is not existing
     """
     settings = dict(TEST_SETTINGS)
@@ -109,5 +87,3 @@ def test_get_detailed_progress_by_state_does_not_exist():
 
     # Push two value into pending states
     assert redis_backend.get_detailed_progress_by_state('1', 'FOO') == set([])
-
-    redis_backend.client.flushdb()

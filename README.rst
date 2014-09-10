@@ -8,8 +8,12 @@ Documentation
 
 Latest documentation: not yet generated.
 
-Getting started
+Getting Started
 ---------------
+
+**Initialize JobProgress**
+
+Before create or load any job instance, setup up backend and create a session.
 
 .. code-block:: python
 
@@ -19,8 +23,31 @@ Getting started
     >>> settings = {"url": "redis://localhost:6379/0"}
     >>> JobProgress.backend = RedisBackend(settings)
     >>> JobProgress.session = session.Session()
+
+**Create Job**
+
+.. code-block:: python
+
     >>> # 10 is the amount of work
     >>> job = JobProgress({"created_at": "2013-12-12"}, amount=10, state=states.STARTED)
+    >>> # Get job id is a random uuid that we can use to get this job
+    >>> job.id
+    '02d10e4b-ee46-4a9d-bd6a-b30e710490fb'
+    
+**Load Job by Id**
+
+You can load a existing job by its id.
+
+.. code-block:: python
+
+    >>> job = JobProgress.session.get('02d10e4b-ee46-4a9d-bd6a-b30e710490fb')
+    >>> job
+    <JobProgress '02d10e4b-ee46-4a9d-bd6a-b30e710490fb'>
+    
+**Add Success or Failure Progress**
+
+.. code-block:: python    
+    
     >>> job.add_one_success()
     >>> job.add_one_failure()
     >>> job.get_progress()
@@ -30,6 +57,28 @@ Getting started
     >>> jobs = JobProgress.query(state=states.STARTED)
     >>> jobs[0].get_progress()
     {'FAILURE': 1, 'PENDING': 8, 'SUCCESS': 1}
+
+**Add Detailed Progress**
+
+.. code-block:: python
+
+    >>> # Create a new job
+    >>> job = JobProgress({}, amount=10, state=states.STARTED)
+    >>> job.add_one_success("success item")
+    >>> job.add_one_failure("failed item")
+    >>> job.get_detailed_progress()
+    {'FAILURE': set(['failed item']), 'SUCCESS': set(['success item'])}
+
+**Use Track Helper**
+
+.. code-block:: python
+
+    >>> # Create a new job
+    >>> job = JobProgress({}, amount=10, state=states.STARTED)
+    >>> is_success = True
+    >>> job.track(is_success, 'foo')
+    >>> job.get_detailed_progress()
+    {'SUCCESS': set(['foo'])}
 
 Installation
 ------------
@@ -44,7 +93,7 @@ When using Twemproxy, moving a job between states is a non-atomic operation.
 License
 -------
 
-charlatan is available under the MIT License.
+JobProgress is available under the MIT License.
 
 Copyright Uber 2013, Charles-Axel Dein <charles@uber.com>
 

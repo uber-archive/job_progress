@@ -89,13 +89,10 @@ class JobProgress(object):
         else:
             self.add_one_failure(item_id)
 
-    def get_detailed_progress(self, states_=None):
+    def get_detailed_progress(self, *states_):
         """Get all detailed progress for the job"""
         if not states_:
             states_ = self.backend.get_all_detailed_progress_states(self.id)
-
-        if isinstance(states_, basestring):
-            states_ = [states_]
 
         result = {}
         for state in states_:

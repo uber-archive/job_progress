@@ -201,7 +201,7 @@ def test_add_one_success_with_item_id_adds_detailed_progress():
     }
 
 
-def test_get_detailed_progress_with_states_returns_progress_of_asked_states():
+def test_get_detailed_progress_with_one_state_returns_expected_progress():
     """Verify that get_detailed_progress without state"""
     job = JobProgress({"a": 1}, amount=10)
 
@@ -209,6 +209,18 @@ def test_get_detailed_progress_with_states_returns_progress_of_asked_states():
     job.add_one_failure('333')
     assert job.get_detailed_progress(states.SUCCESS) == {
         states.SUCCESS: set(['111']),
+    }
+
+
+def test_get_detailed_progress_with_two_states_returns_expected_progress():
+    """Verify that get_detailed_progress without state"""
+    job = JobProgress({"a": 1}, amount=10)
+
+    job.add_one_success('111')
+    job.add_one_failure('333')
+    assert job.get_detailed_progress(states.SUCCESS, states.FAILURE) == {
+        states.SUCCESS: set(['111']),
+        states.FAILURE: set(['333']),
     }
 
 

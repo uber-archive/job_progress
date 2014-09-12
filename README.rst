@@ -31,7 +31,7 @@ Before creating or loading a job instance, we must setup JobProgress's backend a
     >>> # 10 is the amount of work
     >>> job = JobProgress({"created_at": "2013-12-12"}, amount=10, state=states.STARTED)
     >>> # Get job id is a random uuid that we can use to get this job
-    >>> job.id
+    >>> job.id # doctest: +SKIP
     '02d10e4b-ee46-4a9d-bd6a-b30e710490fb'
     
 **Load Job by Id**
@@ -47,7 +47,9 @@ You can load an existing job by its id.
 **Add Success or Failure Progress**
 
 .. code-block:: python    
-    
+
+    >>> # Create a new job
+    >>> job = JobProgress({}, amount=10, state=states.STARTED)
     >>> job.add_one_success()
     >>> job.add_one_failure()
     >>> job.get_progress()

@@ -11,6 +11,7 @@ DEFAULT_SETTINGS = {
     "heartbeat_expiration": 3600,  # in seconds
     "using_twemproxy": True,
 }
+DETAILED_PROGRESS_PREFIX = "detailed_progress"
 
 
 class RedisBackend(object):
@@ -229,7 +230,10 @@ class RedisBackend(object):
         :param str key:
         :param str state:
         """
-        return cls._get_metadata_key(key, "detailed_progress:" + state)
+        return cls._get_metadata_key(
+            key,
+            "{}:{}".format(DETAILED_PROGRESS_PREFIX, state)
+        )
 
     def get_ids(self, **filters):
         """Query the backend.

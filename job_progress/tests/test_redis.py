@@ -7,8 +7,11 @@ from job_progress.backends.redis import RedisBackend
 from job_progress.tests import TEST_SETTINGS
 
 
+def setup_function(function):
+    _flush_db(TEST_SETTINGS["url"])
+
+
 def teardown_function(function):
-    # Flush the db.
     _flush_db(TEST_SETTINGS["url"])
 
 
@@ -53,7 +56,8 @@ def test_initialize_without_twemproxy():
 
 
 def test_update_heartbeat():
-    """Test update_heartbeat will called client.setex function"""
+    """Test update_heartbeat will call client.setex function
+    """
 
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True
@@ -66,8 +70,7 @@ def test_update_heartbeat():
 
 
 def test_detailed_progress_with_item_id_workflow():
-    """Test that add_one_detailed_progress_state will add bject
-    to the right states
+    """Test add_one_detailed_progress_state will add item to the states
     """
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True
@@ -80,8 +83,7 @@ def test_detailed_progress_with_item_id_workflow():
 
 
 def test_get_detailed_progress_by_state_failed_without_state():
-    """Test that get_detailed_progress_by_state should raise
-    ValueError exception if no state specified
+    """Test get_detailed_progress_by_state raise ValueError if not pass state
     """
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True
@@ -93,8 +95,7 @@ def test_get_detailed_progress_by_state_failed_without_state():
 
 
 def test_get_detailed_progress_by_state_does_not_exist():
-    """Test that get_detailed_progress_by_state should return empty set
-    if state is not existing
+    """Test get_detailed_progress_by_state return empty set if no such state
     """
     settings = dict(TEST_SETTINGS)
     settings['using_twemproxy'] = True

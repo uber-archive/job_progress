@@ -69,11 +69,19 @@ class JobProgress(object):
         return self.backend.add_one_progress_state(self.id, state, item_id)
 
     def add_one_failure(self, item_id=None):
-        """Add one failure state."""
+        """Add one failure state.
+
+        :param item_id: Details with this progress. If it is None, then no
+                        details will be added for this progress.
+        """
         self.add_one_progress_state(states.FAILURE, item_id)
 
     def add_one_success(self, item_id=None):
-        """Add one success state."""
+        """Add one success state.
+
+        :param item_id: Details with this progress. If it is None, then no
+                        details will be added for this progress.
+        """
         self.add_one_progress_state(states.SUCCESS, item_id)
 
     def track(self, is_success, item_id=None):
@@ -90,7 +98,18 @@ class JobProgress(object):
             self.add_one_failure(item_id)
 
     def get_detailed_progress(self, *states_):
-        """Get all detailed progress for the job"""
+        """Get all detailed progress for the job
+
+        Only states that has details added will be returned.
+        :rtype: dict
+
+        E.g.::
+
+            {
+            "success": set([1, 2, 3]),
+            "failure": set([4, 5]),
+            }
+        """
         if not states_:
             states_ = self.backend.get_all_detailed_progress_states(self.id)
 
@@ -129,7 +148,11 @@ class JobProgress(object):
         return progress
 
     def to_dict(self, include_details=False):
-        """Return dict representation of the object."""
+        """Return dict representation of the object.
+
+        If `include_details` is True, the result will include detailed
+        progress info.
+        """
         returned = {
             "id": self.id,
             "data": self.data,

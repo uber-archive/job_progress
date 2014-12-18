@@ -47,7 +47,7 @@ class RedisBackend(object):
         if self.get_client:
             return self.get_client()
         else:
-            return redis.StrictRedis.from_url(self.settings["url"])
+            return redis.StrictRedis.from_url(self.settings["backend_url"])
 
     def initialize_job(self, id_,
                        data, state, amount):

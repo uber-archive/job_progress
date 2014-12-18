@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import uuid
 
 from job_progress import states
+from job_progress.utils import classproperty
 
 
 def _generate_id():
@@ -11,7 +12,6 @@ def _generate_id():
 
 class JobProgress(object):
 
-    backend = None
     session = None
 
     def __init__(self, data, amount, id_=None, state=None,
@@ -29,7 +29,7 @@ class JobProgress(object):
             self.session.add(self.id, self)
 
     def __repr__(self):
-        return "<JobProgress '%s'>" % self.id
+        return "<%s '%s'>" % (self.__class__.__name__, self.id)
 
     @classmethod
     def from_backend(cls, data, amount, id_, state, previous_state):
@@ -38,10 +38,32 @@ class JobProgress(object):
         self = cls(data, amount, id_, state, previous_state, loading=True)
         return self
 
-    @property
-    def backend(self):
+    @classmethod
+    def query(cls, **filters):
+        """Query the backend.
+
+        :param filters: filters.
+
+        Currently supported filters are:
+
+        - ``is_ready``
+        - ``state``
+
+        This method should be considered alpha.
+        """
+
+        ids = cls.backend.get_ids(**filters)
+        return [cls.session.get(id_) for id_ in ids]
+
+    @classmethod
+    def set_session(cls, session):
+        """Set the session."""
+        cls.session = session
+
+    @classproperty
+    def backend(cls):
         """Return backend instance."""
-        return self.backend_factory()
+        return cls.session.backend
 
     @property
     def is_ready(self):
@@ -117,20 +139,3 @@ class JobProgress(object):
     def delete(self):
         """Delete the job."""
         self.backend.delete_job(self.id, self.state)
-
-    @classmethod
-    def query(cls, **filters):
-        """Query the backend.
-
-        :param filters: filters.
-
-        Currently supported filters are:
-
-        - ``is_ready``
-        - ``state``
-
-        This method should be considered alpha.
-        """
-
-        ids = cls.backend.get_ids(**filters)
-        return [cls.session.get(id_) for id_ in ids]

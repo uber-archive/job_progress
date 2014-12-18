@@ -19,3 +19,12 @@ def cleanup_ready_jobs(session):
     jobs = session.query(is_ready=True)
     for job in jobs:
         job.delete()
+
+
+class classproperty(object):
+
+    def __init__(self, getter):
+        self.getter = getter
+
+    def __get__(self, instance, owner):
+        return self.getter(owner)

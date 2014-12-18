@@ -21,7 +21,7 @@ When using Twemproxy, moving a job between states is a non-atomic operation.
 License
 -------
 
-charlatan is available under the MIT License.
+This package is available under the MIT License.
 
 Copyright Uber 2014, Charles-Axel Dein <charles@uber.com>
 

@@ -99,3 +99,6 @@ Example session
     >>> jobs = JobProgress.query(state=states.STARTED)
     >>> jobs[0].get_progress()
     {'FAILURE': 1, 'PENDING': 8, 'SUCCESS': 1}
+
+Example Integration With Celery
+-------------------------------

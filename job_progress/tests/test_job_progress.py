@@ -26,7 +26,7 @@ def test_flow():
 
     data = {"toaster": "bidule"}
     amount = 10
-    job = JobProgress(data, amount)
+    job = JobProgress(data=data, amount=amount)
 
     expected = {
         'amount': 10,

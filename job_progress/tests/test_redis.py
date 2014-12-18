@@ -2,7 +2,7 @@ import mock
 
 from job_progress import states
 from job_progress.backends.redis import RedisBackend
-from job_progress.tests.fixtures.job_progress import TEST_CONFIG
+from job_progress.tests.fixtures.jobprogress import TEST_CONFIG
 
 
 def test_initialize_with_twemproxy():

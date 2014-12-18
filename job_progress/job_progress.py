@@ -12,14 +12,25 @@ def _generate_id():
 
 class JobProgress(object):
 
+    """
+    JobProgress
+
+    :param int amount: amount of work to do.
+    :param dict data: metadata about the job.
+    :param str id_: job identifier
+    :param str state: state the job starts with
+    :param str previous_state:
+    :param bool loading:
+
+    """
+
     session = None
 
-    def __init__(self, data, amount, id_=None, state=None,
-                 previous_state=None, loading=False):
-        self.data = data
+    def __init__(self, data=None, amount=1, id_=None, state=states.PENDING,
+                 previous_state=states.PENDING, loading=False):
+        self.data = data or {}
         self.amount = amount
-        state = state or states.PENDING
-        self._previous_state = previous_state or states.PENDING
+        self._previous_state = previous_state
         self.id = id_ or _generate_id()
 
         if not loading:
@@ -29,12 +40,12 @@ class JobProgress(object):
             self.session.add(self.id, self)
 
     def __repr__(self):
+        """Return repr of the object."""
         return "<%s '%s'>" % (self.__class__.__name__, self.id)
 
     @classmethod
     def from_backend(cls, data, amount, id_, state, previous_state):
         """Load from backend."""
-
         self = cls(data, amount, id_, state, previous_state, loading=True)
         return self
 

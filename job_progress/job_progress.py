@@ -32,6 +32,7 @@ class JobProgress(object):
         self.amount = amount
         self._previous_state = previous_state
         self.id = id_ or _generate_id()
+        self.delete_on_closing = False
 
         if not loading:
             # Store in the back-end
@@ -96,6 +97,28 @@ class JobProgress(object):
     def is_staled(self):
         """Return True if staled."""
         return self.state == states.STARTED and self.backend.is_staled(self.id)
+
+    def run(self, delete_on_closing=False):
+        """Return a context manager.
+
+        :param bool delete: if ``True``, will delete on closing.
+        """
+        self.delete_on_closing = delete_on_closing
+        return self
+
+    def __enter__(self):
+        """Enter the context manager."""
+        self.state = states.STARTED
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the context manager."""
+        if exc_value:
+            self.state = states.FAILURE
+        else:
+            self.state = states.SUCCESS
+        if self.delete_on_closing:
+            self.delete()
 
     def add_one_progress_state(self, state):
         """Add one unit status."""

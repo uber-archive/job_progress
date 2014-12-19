@@ -88,6 +88,7 @@ class RedisBackend(object):
         client = self.client.pipeline() if not using_twemproxy else self.client
 
         client.delete(self._get_metadata_key(key, "data"))
+        client.delete(self._get_metadata_key(key, "progress"))
         client.delete(self._get_metadata_key(key, "amount"))
         client.delete(self._get_metadata_key(key, "state"))
         client.delete(self._get_metadata_key(key, "heartbeat"))

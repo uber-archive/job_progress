@@ -1,5 +1,5 @@
 # Test runner
-pytest==2.4.2
+pytest==2.6.4
 # Mock
 mock==1.0.1
 -e git+git://github.com/mverteuil/pytest-ipdb.git#egg=pytest-ipdb

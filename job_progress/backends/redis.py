@@ -9,7 +9,8 @@ JOB_LOG_PREFIX = "jobprogress"
 INDEX_SUFFIX = "index"
 DEFAULT_SETTINGS = {
     "heartbeat_expiration": 3600,  # in seconds
-    "using_twemproxy": True,
+    "using_twemproxy": False,
+    "expiration": None
 }
 
 
@@ -55,14 +56,27 @@ class RedisBackend(object):
         key = self._get_key_for_job_id(id_)
 
         using_twemproxy = self.settings.get('using_twemproxy')
+        expiration = self.settings.get('expiration')
         client = self.client.pipeline() if not using_twemproxy else self.client
 
+        operations = [
+            (client.set, self._get_metadata_key(key, "amount"), amount),
+            (client.set, self._get_metadata_key(key, "state"), state),
+            (client.sadd, self._get_key_for_index("all"), key),
+            (client.sadd, self._get_key_for_index("state", state), key),
+        ]
         if data:
-            client.hmset(self._get_metadata_key(key, "data"), data)
-        client.set(self._get_metadata_key(key, "amount"), amount)
-        client.set(self._get_metadata_key(key, "state"), state)
-        client.sadd(self._get_key_for_index("all"), key)
-        client.sadd(self._get_key_for_index("state", state), key)
+            operations.append(
+                (client.hmset, self._get_metadata_key(key, "data"), data))
+
+        for execute, key, value in operations:
+            if execute == client.set and expiration:
+                client.setex(key, expiration, value)
+            else:
+                execute(key, value)
+                if expiration:
+                    client.expire(key, expiration)
+
         if not using_twemproxy:
             client.execute()
 
@@ -126,6 +140,7 @@ class RedisBackend(object):
     def set_state(self, id_, state, previous_state=None):
         """Set state of a given id."""
         key = self._get_key_for_job_id(id_)
+        expiration = self.settings.get('expiration')
 
         # The first thing we do is update the heartbeat to prevent any
         # race condition
@@ -134,14 +149,17 @@ class RedisBackend(object):
 
         # First set the state
         state_key = self._get_metadata_key(key, "state")
-        self.client.set(state_key, state)
+        if expiration:
+            self.client.setex(state_key, expiration, state)
+        else:
+            self.client.set(state_key, state)
 
         # The very last thing is updating the index
         self.update_state_index(key, previous_state, state)
 
     def update_state_index(self, key, previous_state, new_state):
         """Update the state index."""
-
+        expiration = self.settings.get('expiration')
         previous_state_key = self._get_key_for_index("state", previous_state)
         new_state_key = self._get_key_for_index("state", new_state)
 
@@ -155,6 +173,8 @@ class RedisBackend(object):
                 self.client.sadd(new_state_key, key)
         else:
             self.client.sadd(new_state_key, key)
+        if expiration:
+            self.client.expire(new_state_key, expiration)
 
     def is_staled(self, id_):
         """Return True if job at id_ is staled."""

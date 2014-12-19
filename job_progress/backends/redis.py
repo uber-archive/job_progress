@@ -54,7 +54,6 @@ class RedisBackend(object):
                        data, state, amount):
         """Initialize and store a job."""
         key = self._get_key_for_job_id(id_)
-
         using_twemproxy = self.settings.get('using_twemproxy')
         expiration = self.settings.get('expiration')
         client = self.client.pipeline() if not using_twemproxy else self.client
@@ -114,9 +113,13 @@ class RedisBackend(object):
 
     def add_one_progress_state(self, id_, state):
         """Add one unit state."""
-        key = self._get_key_for_job_id(id_)
-        self.client.hincrby(self._get_metadata_key(key, "progress"),
-                            state, 1)
+        expiration = self.settings.get('expiration')
+        key = self._get_metadata_key(
+            self._get_key_for_job_id(id_),
+            "progress")
+        self.client.hincrby(key, state, 1)
+        if expiration:
+            self.client.expire(key, expiration)
         self.update_hearbeat(key)
 
     def update_hearbeat(self, key):

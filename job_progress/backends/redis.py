@@ -8,6 +8,7 @@ from job_progress.cached_property import cached_property
 JOB_LOG_PREFIX = "jobprogress"
 INDEX_SUFFIX = "index"
 DEFAULT_SETTINGS = {
+    "heartbeat_enabled": False,
     "heartbeat_expiration": 3600,  # in seconds
     "using_twemproxy": False,
     "expiration": None
@@ -114,16 +115,17 @@ class RedisBackend(object):
     def add_one_progress_state(self, id_, state):
         """Add one unit state."""
         expiration = self.settings.get('expiration')
-        key = self._get_metadata_key(
-            self._get_key_for_job_id(id_),
-            "progress")
+        job_key = self._get_key_for_job_id(id_)
+        key = self._get_metadata_key(job_key, "progress")
         self.client.hincrby(key, state, 1)
         if expiration:
             self.client.expire(key, expiration)
-        self.update_hearbeat(key)
+        self.update_hearbeat(job_key)
 
     def update_hearbeat(self, key):
         """Update the task's heartbeat."""
+        if not self.settings.get('heartbeat_enabled'):
+            return
         self.client.setex(self._get_metadata_key(key, "heartbeat"),
                           self.settings["heartbeat_expiration"],
                           1)

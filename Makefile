@@ -40,7 +40,9 @@ coverage:
 	coverage html
 	open htmlcov/index.html
 
-docs: develop
+docs: develop clean
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
+
+docs_open: docs
 	open docs/_build/html/index.html

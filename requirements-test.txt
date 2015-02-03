@@ -1,7 +1,9 @@
 # Test runner
 pytest==2.6.4
+pytest-cov==1.8.1
+
 # Mock
 mock==1.0.1
--e git+git://github.com/mverteuil/pytest-ipdb.git#egg=pytest-ipdb
+
 # Documentation
 Sphinx==1.2b3

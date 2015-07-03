@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import logging
 import redis
+import traceback
 
 from job_progress import states
 from job_progress.cached_property import cached_property
@@ -34,12 +35,17 @@ class RedisBackend(object):
         self.get_client = get_client
 
     def call_redis(self, func, *args, **kwargs):
-        log.info({
+        log_data = {
             'message': 'Updating Redis',
             'function_name': func.__name__,
             'args': args,
             'kwargs': kwargs,
-        })
+        }
+
+        if func.__name__ == 'delete':
+            log_data['tb'] = traceback.format_stack()
+
+        log.info(log_data)
 
         return func(*args, **kwargs)
 

@@ -8,11 +8,11 @@ from job_progress.tests.fixtures.jobprogress import TEST_CONFIG
 
 
 def setup_function(function):
-    _flush_db(TEST_SETTINGS["url"])
+    _flush_db(TEST_CONFIG["url"])
 
 
 def teardown_function(function):
-    _flush_db(TEST_SETTINGS["url"])
+    _flush_db(TEST_CONFIG["url"])
 
 
 def _flush_db(url):
@@ -55,7 +55,7 @@ def test_update_heartbeat():
     """Test update_heartbeat will call client.setex function
     """
 
-    settings = dict(TEST_SETTINGS)
+    settings = dict(TEST_CONFIG)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 
@@ -68,7 +68,7 @@ def test_update_heartbeat():
 def test_detailed_progress_with_item_id_workflow():
     """Test add_one_detailed_progress_state will add item to the states
     """
-    settings = dict(TEST_SETTINGS)
+    settings = dict(TEST_CONFIG)
     settings['using_twemproxy'] = True
     redis = RedisBackend(settings)
     id = '1'
@@ -81,7 +81,7 @@ def test_detailed_progress_with_item_id_workflow():
 def test_get_detailed_progress_by_state_failed_without_state():
     """Test get_detailed_progress_by_state raise ValueError if not pass state
     """
-    settings = dict(TEST_SETTINGS)
+    settings = dict(TEST_CONFIG)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 
@@ -93,7 +93,7 @@ def test_get_detailed_progress_by_state_failed_without_state():
 def test_get_detailed_progress_by_state_does_not_exist():
     """Test get_detailed_progress_by_state return empty set if no such state
     """
-    settings = dict(TEST_SETTINGS)
+    settings = dict(TEST_CONFIG)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 

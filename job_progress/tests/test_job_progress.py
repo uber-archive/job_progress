@@ -179,7 +179,7 @@ def test_delete():
     job.state = states.STARTED
     job.add_one_success('111')
 
-    redis_client = redis.StrictRedis.from_url(TEST_SETTINGS["url"])
+    redis_client = redis.StrictRedis.from_url(TEST_CONFIG["backend_url"])
     job.delete()
 
     assert len(redis_client.keys("*")) == 0

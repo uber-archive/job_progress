@@ -13,6 +13,7 @@ DEFAULT_SETTINGS = {
     "using_twemproxy": False,
     "expiration": None
 }
+DETAILED_PROGRESS_PREFIX = "detailed_progress"
 
 
 class RedisBackend(object):
@@ -92,8 +93,18 @@ class RedisBackend(object):
         client.delete(self._get_metadata_key(key, "amount"))
         client.delete(self._get_metadata_key(key, "state"))
         client.delete(self._get_metadata_key(key, "heartbeat"))
+        client.delete(self._get_metadata_key(key, "progress"))
         client.srem(self._get_key_for_index("all"), key)
         client.srem(self._get_key_for_index("state", state), key)
+
+        # delete detailed progress
+        detailed_progress_states = client.smembers(
+            self._get_metadata_key(key, "detailed_progress_states"),
+        )
+        for state in detailed_progress_states:
+            client.delete(self._get_detailed_progress_key(key, state))
+        client.delete(self._get_metadata_key(key, "detailed_progress_states"))
+
         if not using_twemproxy:
             client.execute()
 
@@ -113,23 +124,48 @@ class RedisBackend(object):
             "previous_state": state,
         }
 
-    def add_one_progress_state(self, id_, state):
+    def add_one_progress_state(self, id_, state, item_id=None):
         """Add one unit state."""
-        expiration = self.settings.get('expiration')
-        job_key = self._get_key_for_job_id(id_)
-        key = self._get_metadata_key(job_key, "progress")
-        self.client.hincrby(key, state, 1)
-        if expiration:
-            self.client.expire(key, expiration)
-        self.update_hearbeat(job_key)
+        key = self._get_key_for_job_id(id_)
+        self.client.hincrby(self._get_metadata_key(key, "progress"),
+                            state, 1)
 
-    def update_hearbeat(self, key):
+        # Add detailed progress if applicable
+        if item_id is not None:
+            self.client.sadd(
+                self._get_detailed_progress_key(key, state),
+                item_id
+            )
+            self.client.sadd(
+                self._get_metadata_key(key, "detailed_progress_states"),
+                state,
+            )
+
+        # Refresh heartbeat
+        self.update_heartbeat(key)
+
+    def update_heartbeat(self, key):
         """Update the task's heartbeat."""
         if not self.settings.get('heartbeat_enabled'):
             return
         self.client.setex(self._get_metadata_key(key, "heartbeat"),
                           self.settings["heartbeat_expiration"],
                           1)
+
+    def get_detailed_progress_by_state(self, id_, state):
+        """Get detailed progress for specific state"""
+        if not state:
+            raise ValueError('Argument "state" cannot be None')
+        key = self._get_key_for_job_id(id_)
+        metadata_key = self._get_detailed_progress_key(key, state)
+        return self.client.smembers(metadata_key)
+
+    def get_all_detailed_progress_states(self, id_):
+        """Get all available detailed progress state"""
+        key = self._get_key_for_job_id(id_)
+        return self.client.smembers(
+            self._get_metadata_key(key, "detailed_progress_states"),
+        )
 
     def get_progress(self, id_):
         """Return progress."""
@@ -151,7 +187,7 @@ class RedisBackend(object):
         # The first thing we do is update the heartbeat to prevent any
         # race condition
         if state == states.STARTED:
-            self.update_hearbeat(key)
+            self.update_heartbeat(key)
 
         # First set the state
         state_key = self._get_metadata_key(key, "state")
@@ -210,6 +246,17 @@ class RedisBackend(object):
         :param str name:
         """
         return "{}:{}".format(key, name)
+
+    @classmethod
+    def _get_detailed_progress_key(cls, key, state):
+        """Return redis key for detailed progress for a state
+        :param str key:
+        :param str state:
+        """
+        return cls._get_metadata_key(
+            key,
+            "{}:{}".format(DETAILED_PROGRESS_PREFIX, state)
+        )
 
     def get_ids(self, **filters):
         """Query the backend.

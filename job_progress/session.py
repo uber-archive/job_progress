@@ -11,8 +11,10 @@ class Session(object):
     so that we don't reload an object.
     """
 
-    def __init__(self):
+    def __init__(self, backend):
         self.objects = self._new_cache_storage()
+        self.backend = backend
+        self.job_progress_class = JobProgress
 
     def get(self, id_):
         """Get an object from the backend."""
@@ -22,9 +24,9 @@ class Session(object):
             return obj
 
         # Get the data from the backend
-        data = JobProgress.backend.get_data(id_)
+        data = self.backend.get_data(id_)
         # Instantiate the object
-        obj = JobProgress.from_backend(id_=id_, **data)
+        obj = self.job_progress_class.from_backend(id_=id_, **data)
         # Add it to the cache
         self.add(id_, obj)
 
@@ -54,5 +56,5 @@ class Session(object):
         This method should be considered alpha.
         """
 
-        ids = JobProgress.backend.get_ids(**filters)
+        ids = self.backend.get_ids(**filters)
         return [self.get(id_) for id_ in ids]

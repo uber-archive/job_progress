@@ -25,7 +25,7 @@ setup(
     name='job_progress',
     version='0.0.8',
     url='https://github.com/uber/job_progress',
-    license='Proprietary',
+    license='MIT (Expat)',
     author='Charles-Axel Dein',
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
@@ -46,6 +46,5 @@ setup(
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Internet :: WWW/HTTP',
         ],
 )

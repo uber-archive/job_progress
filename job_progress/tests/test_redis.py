@@ -4,7 +4,7 @@ import redis
 
 from job_progress import states
 from job_progress.backends.redis import RedisBackend
-from job_progress.tests import TEST_SETTINGS
+from job_progress.tests.fixtures.jobprogress import TEST_CONFIG
 
 
 def setup_function(function):
@@ -22,10 +22,8 @@ def _flush_db(url):
 
 
 def test_initialize_with_twemproxy():
-    """Test that using_twemproxy = True in the RedisBackend
-    setting uses a pipeline.
-    """
-    settings = dict(TEST_SETTINGS)
+    """Test that RedisBackend uses a pipeline."""
+    settings = dict(TEST_CONFIG)
     settings['using_twemproxy'] = False
     redis_backend = RedisBackend(settings)
 
@@ -39,10 +37,8 @@ def test_initialize_with_twemproxy():
 
 
 def test_initialize_without_twemproxy():
-    """Test that using_twemproxy = False in the RedisBackend
-    setting does not use a pipeline.
-    """
-    settings = dict(TEST_SETTINGS)
+    """Test that RedisBackend does not use a pipeline."""
+    settings = dict(TEST_CONFIG)
     settings['using_twemproxy'] = True
     redis_backend = RedisBackend(settings)
 

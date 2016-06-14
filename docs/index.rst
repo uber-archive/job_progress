@@ -11,6 +11,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+.. toctree::
+   :maxdepth: 2
+
+   quickstart
    progress
 
 
@@ -19,7 +23,6 @@ Foreword
 
 The main idea behind this library is to be able to store a job's metadata and
 progress into a backend, so as to be able to retrieve them.
-
 
 
 Indices and tables

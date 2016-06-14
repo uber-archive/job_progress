@@ -8,11 +8,11 @@ from job_progress.tests.fixtures.jobprogress import TEST_CONFIG
 
 
 def setup_function(function):
-    _flush_db(TEST_CONFIG["url"])
+    _flush_db(TEST_CONFIG["backend_url"])
 
 
 def teardown_function(function):
-    _flush_db(TEST_CONFIG["url"])
+    _flush_db(TEST_CONFIG["backend_url"])
 
 
 def _flush_db(url):

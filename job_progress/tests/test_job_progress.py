@@ -4,21 +4,15 @@ import mock
 import pytest
 import redis
 
-from job_progress.job_progress import JobProgress
-from job_progress.backends.redis import RedisBackend
-from job_progress.tests import TEST_SETTINGS
 from job_progress import utils
 from job_progress import states
-from job_progress import session
-
-JobProgress.backend = RedisBackend(TEST_SETTINGS)
-job_session = session.Session()
-JobProgress.session = job_session
+from job_progress.tests.fixtures.jobprogress import JobProgress, session
+from job_progress.tests.fixtures.jobprogress import TEST_CONFIG
 
 
 def teardown_function(function):
     # Flush the db.
-    _flush_db(TEST_SETTINGS["url"])
+    _flush_db(TEST_CONFIG["backend_url"])
 
 
 def _flush_db(url):
@@ -32,7 +26,7 @@ def test_flow():
 
     data = {"toaster": "bidule"}
     amount = 10
-    job = JobProgress(data, amount)
+    job = JobProgress(data=data, amount=amount)
 
     expected = {
         'amount': 10,
@@ -133,7 +127,7 @@ def test_invalid_filter():
     """Verify that we raise a TypeError on invalid filter."""
 
     with pytest.raises(TypeError):
-        job_session.query(toaster=True)
+        session.query(toaster=True)
 
 
 def test_staled_job():
@@ -185,7 +179,7 @@ def test_delete():
     job.state = states.STARTED
     job.add_one_success('111')
 
-    redis_client = redis.StrictRedis.from_url(TEST_SETTINGS["url"])
+    redis_client = redis.StrictRedis.from_url(TEST_CONFIG["backend_url"])
     job.delete()
 
     assert len(redis_client.keys("*")) == 0

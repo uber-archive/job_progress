@@ -153,8 +153,7 @@ class JobProgress(object):
             # There can be a race condition before we have saved amount.
             pending = int(self.amount) - sum(progress.values())
 
-        if pending:
-            progress[states.PENDING] = pending
+        progress[states.PENDING] = pending
 
         return progress
 

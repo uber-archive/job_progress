@@ -23,7 +23,7 @@ class PyTest(TestCommand):
 
 setup(
     name='job_progress',
-    version='0.0.8',
+    version='1.0.0',
     url='https://github.com/uber/job_progress',
     license='MIT (Expat)',
     author='Charles-Axel Dein',

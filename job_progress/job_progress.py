@@ -120,17 +120,62 @@ class JobProgress(object):
         if self.delete_on_closing:
             self.delete()
 
-    def add_one_progress_state(self, state):
+    def add_one_progress_state(self, state, item_id=None):
         """Add one unit status."""
-        return self.backend.add_one_progress_state(self.id, state)
+        return self.backend.add_one_progress_state(self.id, state, item_id)
 
-    def add_one_failure(self):
-        """Add one failure state."""
-        return self.add_one_progress_state(states.FAILURE)
+    def add_one_failure(self, item_id=None):
+        """Add one failure state.
 
-    def add_one_success(self):
-        """Add one success state."""
-        return self.add_one_progress_state(states.SUCCESS)
+        :param item_id: Details with this progress. If it is None, then no
+                        details will be added for this progress.
+        """
+        self.add_one_progress_state(states.FAILURE, item_id)
+
+    def add_one_success(self, item_id=None):
+        """Add one success state.
+
+        :param item_id: Details with this progress. If it is None, then no
+                        details will be added for this progress.
+        """
+        self.add_one_progress_state(states.SUCCESS, item_id)
+
+    def track(self, is_success, item_id=None):
+        """Check if an object is_success or not. If failed, put it in
+        failure detailed progress and increase failure counter. If
+        not, put it in success detailed progress and increase success
+        counter.
+
+        If no value provided, only modify the counter.
+        """
+        if is_success:
+            self.add_one_success(item_id)
+        else:
+            self.add_one_failure(item_id)
+
+    def get_detailed_progress(self, *states_):
+        """Get all detailed progress for the job
+
+        Only states that has details added will be returned.
+        :rtype: dict
+
+        E.g.::
+
+            {
+            "success": set([1, 2, 3]),
+            "failure": set([4, 5]),
+            }
+        """
+        if not states_:
+            states_ = self.backend.get_all_detailed_progress_states(self.id)
+
+        result = {}
+        for state in states_:
+            result[state] = self.backend.get_detailed_progress_by_state(
+                self.id, state
+            )
+
+        return result
 
     def get_progress(self):
         """Return the progress.
@@ -158,8 +203,12 @@ class JobProgress(object):
 
         return progress
 
-    def to_dict(self):
-        """Return dict representation of the object."""
+    def to_dict(self, include_details=False):
+        """Return dict representation of the object.
+
+        If `include_details` is True, the result will include detailed
+        progress info.
+        """
         returned = {
             "id": self.id,
             "data": self.data,
@@ -168,6 +217,8 @@ class JobProgress(object):
             "is_ready": self.is_ready,
             "state": self.state,
         }
+        if include_details:
+            returned['detailed_progress'] = self.get_detailed_progress()
         return returned
 
     def delete(self):

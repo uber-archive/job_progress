@@ -126,6 +126,11 @@ class RedisBackend(object):
 
     def add_one_progress_state(self, id_, state, item_id=None):
         """Add one unit state."""
+<<<<<<< HEAD
+        key = self._get_key_for_job_id(id_)
+        self.client.hincrby(self._get_metadata_key(key, "progress"),
+                            state, 1)
+=======
         expiration = self.settings.get('expiration')
         job_key = self._get_key_for_job_id(id_)
         key = self._get_metadata_key(job_key, "progress")
@@ -133,6 +138,7 @@ class RedisBackend(object):
         if expiration:
             self.client.expire(key, expiration)
         self.update_hearbeat(job_key)
+>>>>>>> master
 
         # Add detailed progress if applicable
         if item_id is not None:
